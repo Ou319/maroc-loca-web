@@ -65,7 +65,7 @@ const Navbar = () => {
             <div className="relative group">
               <button className="flex items-center space-x-1 border py-1.5 rounded-lg hover:bg-gray-50 px-[22px] mx-[15px] text-sm font-normal">
                 <Globe size={16} />
-                <span className="uppercase">{language}</span>
+                <span className="uppercase mx-[5px]">{language}</span>
               </button>
               <div className="absolute right-0 mt-2 bg-white shadow-lg rounded-lg overflow-hidden scale-0 group-hover:scale-100 transition-transform origin-top-right z-20">
                 <button onClick={() => handleLanguageChange('ar')} className={`block w-full text-left px-4 py-2 hover:bg-gray-50 ${language === 'ar' ? 'bg-gray-100' : ''}`}>
