@@ -19,9 +19,9 @@ interface HeroSlide {
 }
 
 const HomePage = () => {
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
   const { toast } = useToast();
-  const [featuredCars, setFeaturedCars] = useState<CarType[]>([]);
+  const [allCars, setAllCars] = useState<CarType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(0);
   
@@ -57,13 +57,11 @@ const HomePage = () => {
     async function fetchData() {
       setIsLoading(true);
       try {
-        // Fetch cars from the database
+        // Fetch all cars from the database
         const { data: carsData, error: carsError } = await supabase
           .from('cars')
           .select('*')
-          .eq('status', 'available')
-          .order('created_at', { ascending: false })
-          .limit(3);
+          .eq('status', 'available');
         
         if (carsError) throw carsError;
         
@@ -80,7 +78,7 @@ const HomePage = () => {
             year: car.year,
             description: car.description
           }));
-          setFeaturedCars(formattedCars);
+          setAllCars(formattedCars);
         }
       } catch (error) {
         console.error("Error fetching homepage data:", error);
@@ -118,8 +116,8 @@ const HomePage = () => {
 
   return (
     <Layout>
-      {/* Hero Carousel */}
-      <section className="relative h-screen">
+      {/* Hero Carousel - Reduced height */}
+      <section className="relative h-[70vh]">
         {heroSlides.map((slide, index) => (
           <div 
             key={slide.id} 
@@ -175,8 +173,8 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* Welcome Section */}
-      <section className="py-16 md:py-24 px-4">
+      {/* Welcome Section - Improved spacing */}
+      <section className="py-12 md:py-16 px-6">
         <div className="max-w-5xl mx-auto text-center">
           <h2 className="text-3xl md:text-5xl font-bold mb-6 text-gray-800">Welcome to Maroc Loca Car Rentals</h2>
           <p className="text-lg text-gray-600 mb-8 max-w-4xl mx-auto">
@@ -188,21 +186,21 @@ const HomePage = () => {
         </div>
       </section>
       
-      {/* Featured Cars Section */}
+      {/* Featured Cars Section - Now showing all cars */}
       <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-6">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gray-800">
-              {t("home.featured.title")}
+              Our Vehicle Fleet
             </h2>
             <p className="text-gray-600 max-w-3xl mx-auto">
-              {t("home.featured.subtitle")}
+              Explore our collection of premium vehicles for any occasion
             </p>
           </div>
           
           {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-              {[1, 2, 3].map(i => (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
+              {[1, 2, 3, 4, 5, 6].map(i => (
                 <div key={i} className="bg-white rounded-lg shadow-md overflow-hidden animate-pulse">
                   <div className="h-48 bg-gray-200"></div>
                   <div className="p-6">
@@ -214,8 +212,8 @@ const HomePage = () => {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-              {featuredCars.map(car => (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
+              {allCars.map(car => (
                 <div key={car.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
                   <img 
                     src={car.image} 
@@ -228,6 +226,12 @@ const HomePage = () => {
                       <span className="bg-teal-100 text-teal-800 text-xs px-2 py-1 rounded">{car.category}</span>
                     </div>
                     <p className="text-gray-600 mb-4 line-clamp-2">{car.description}</p>
+                    <div className="flex flex-wrap gap-3 text-sm text-gray-500 mb-4">
+                      <span>{car.seats} Seats</span>
+                      <span>{car.transmission}</span>
+                      <span>{car.fuel}</span>
+                      <span>{car.year}</span>
+                    </div>
                     <div className="flex justify-between items-center">
                       <p className="text-xl font-bold text-teal-600">{car.price} MAD<span className="text-sm font-normal text-gray-500">/day</span></p>
                       <Link 
@@ -242,22 +246,12 @@ const HomePage = () => {
               ))}
             </div>
           )}
-          
-          <div className="text-center mt-12">
-            <Link 
-              to="/cars" 
-              className="inline-flex items-center border-2 border-teal-500 text-teal-500 hover:bg-teal-500 hover:text-white px-6 py-3 rounded-md font-medium transition-colors"
-            >
-              {t("home.featured.viewAll")}
-              <ChevronRight className={`ml-2 ${language === 'ar' ? 'transform rotate-180' : ''}`} />
-            </Link>
-          </div>
         </div>
       </section>
       
       {/* About Section */}
-      <section className="py-16 md:py-24 bg-teal-600 text-white">
-        <div className="container mx-auto px-4">
+      <section className="py-16 md:py-20 bg-teal-600 text-white">
+        <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
             <div>
               <h2 className="text-3xl md:text-4xl font-bold mb-6">
@@ -270,7 +264,7 @@ const HomePage = () => {
                 to="/about" 
                 className="px-6 py-3 bg-white text-teal-600 rounded-md font-medium hover:bg-white/90 transition-all inline-flex items-center"
               >
-                {t("home.about.learnMore")}
+                Learn More
                 <ChevronRight className={`ml-2 ${language === 'ar' ? 'transform rotate-180' : ''}`} />
               </Link>
             </div>
@@ -288,7 +282,7 @@ const HomePage = () => {
       
       {/* CTA Section */}
       <section 
-        className="py-20 relative"
+        className="py-16 relative"
         style={{
           backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url(https://images.unsplash.com/photo-1575822086889-6a0ce8c34951?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80)",
           backgroundSize: 'cover',
@@ -296,18 +290,18 @@ const HomePage = () => {
           backgroundAttachment: 'fixed'
         }}
       >
-        <div className="container mx-auto px-4 relative z-10 text-center text-white">
+        <div className="container mx-auto px-6 relative z-10 text-center text-white">
           <h2 className="text-3xl md:text-5xl font-bold mb-6">
-            {t("home.cta.title")}
+            Ready to Hit the Road?
           </h2>
           <p className="text-xl mb-8 max-w-3xl mx-auto">
-            {t("home.cta.subtitle")}
+            Book your perfect ride today and experience Morocco in style
           </p>
           <Link 
             to="/cars" 
             className="bg-teal-500 hover:bg-teal-600 text-white px-6 py-3 rounded-md font-medium transition-colors"
           >
-            {t("home.cta.button")}
+            Browse Cars
           </Link>
         </div>
       </section>

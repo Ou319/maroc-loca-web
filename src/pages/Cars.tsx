@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { useLanguage } from "@/contexts/LanguageContext";
 import Layout from "@/components/Layout";
 import { CarType } from "@/components/CarCard";
 import { Search } from "lucide-react";
@@ -11,7 +10,6 @@ import { useToast } from "@/hooks/use-toast";
 const CATEGORIES = ["All", "Economy", "SUV", "Luxury"];
 
 const CarsPage = () => {
-  const { t } = useLanguage();
   const { toast } = useToast();
   const [cars, setCars] = useState<CarType[]>([]);
   const [filteredCars, setFilteredCars] = useState<CarType[]>([]);
@@ -94,26 +92,43 @@ const CarsPage = () => {
     <Layout>
       {/* Hero Section */}
       <section 
-        className="py-20 relative"
+        className="py-16 relative"
         style={{
           backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url(https://images.unsplash.com/photo-1514267372770-c68dcc0ce206?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80)",
           backgroundSize: 'cover',
           backgroundPosition: 'center'
         }}
       >
-        <div className="container mx-auto px-4 relative z-10 text-white">
+        <div className="container mx-auto px-6 relative z-10 text-white">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            {t("cars.title")}
+            Our Vehicles
           </h1>
           <p className="text-xl mb-0 max-w-3xl">
-            {t("cars.subtitle")}
+            Find the perfect car for your journey
           </p>
         </div>
       </section>
       
       {/* Cars Section */}
       <section className="py-16">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-6">
+          {/* Category Filters */}
+          <div className="flex flex-wrap justify-center gap-4 mb-8">
+            {CATEGORIES.map(category => (
+              <button
+                key={category}
+                className={`px-4 py-2 rounded-full transition-colors ${
+                  selectedCategory === category
+                    ? 'bg-teal-500 text-white'
+                    : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                }`}
+                onClick={() => handleCategoryChange(category)}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+          
           {/* Search Bar */}
           <div className="bg-white rounded-xl shadow-md p-6 mb-10 max-w-4xl mx-auto">
             <div className="relative">
@@ -123,7 +138,7 @@ const CarsPage = () => {
               <input 
                 type="text" 
                 className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full pl-10 p-3 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                placeholder={t("cars.search")}
+                placeholder="Search by name, category or description"
                 value={searchTerm}
                 onChange={handleSearchChange}
               />
@@ -132,7 +147,7 @@ const CarsPage = () => {
           
           {/* Cars Grid */}
           {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
               {[1, 2, 3, 4, 5, 6].map(i => (
                 <div key={i} className="bg-white rounded-lg shadow-md overflow-hidden animate-pulse">
                   <div className="h-48 bg-gray-200"></div>
@@ -147,14 +162,14 @@ const CarsPage = () => {
           ) : filteredCars.length === 0 ? (
             <div className="text-center py-10">
               <h3 className="text-xl font-medium text-gray-600 mb-2">
-                {t("cars.noResults")}
+                No vehicles found
               </h3>
               <p className="text-gray-500">
-                {t("cars.tryDifferent")}
+                Try a different search term or category
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
               {filteredCars.map(car => (
                 <div key={car.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
                   <img 

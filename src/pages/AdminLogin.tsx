@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, LogIn } from "lucide-react";
@@ -9,6 +9,7 @@ import Layout from "@/components/Layout";
 
 const AdminLogin = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -85,7 +86,7 @@ const AdminLogin = () => {
 
   return (
     <Layout>
-      <div className="container mx-auto px-4 py-16">
+      <div className="container mx-auto px-6 py-16">
         <div className="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden p-8">
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold text-gray-800">Admin Login</h1>
