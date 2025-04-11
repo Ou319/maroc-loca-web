@@ -63,7 +63,7 @@ const Navbar = () => {
           <div className="hidden md:flex items-center space-x-4">
             {/* Language Switcher */}
             <div className="relative group">
-              <button className="flex items-center space-x-1 text-sm border py-1.5 rounded-lg hover:bg-gray-50 px-[22px]">
+              <button className="flex items-center space-x-1 border py-1.5 rounded-lg hover:bg-gray-50 px-[22px] mx-[15px] text-sm font-normal">
                 <Globe size={16} />
                 <span className="uppercase">{language}</span>
               </button>
