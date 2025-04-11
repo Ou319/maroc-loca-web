@@ -128,25 +128,6 @@ const CarsPage = () => {
                 onChange={handleSearchChange}
               />
             </div>
-            
-            {/* Category Tabs */}
-            <div className="mt-6">
-              <div className="flex flex-wrap gap-2">
-                {CATEGORIES.map(category => (
-                  <button
-                    key={category}
-                    onClick={() => handleCategoryChange(category)}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                      selectedCategory === category 
-                        ? "bg-teal-500 text-white" 
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
-                  >
-                    {category === "All" ? t("cars.filter.all") : category}
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
           
           {/* Cars Grid */}
