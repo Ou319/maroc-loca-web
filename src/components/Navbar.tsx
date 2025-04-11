@@ -81,7 +81,7 @@ const Navbar = () => {
             </div>
             
             {/* WhatsApp Button */}
-            <a href={`https://wa.me/${companyInfo.whatsapp}`} target="_blank" rel="noopener noreferrer" className="flex items-center bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors">
+            <a href={`https://wa.me/${companyInfo.whatsapp}`} target="_blank" rel="noopener noreferrer" className="flex items-center bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors px-[22px] py-[6px] mx-[6px]">
               <Phone size={16} className="mr-2" />
               <span>{companyInfo.phone}</span>
             </a>
