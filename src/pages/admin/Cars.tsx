@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { useToast } from "@/hooks/use-toast";
@@ -105,15 +104,13 @@ const AdminCars = () => {
     price: 0,
     image: "",
     seats: 5,
-    transmission: "manual",
+    transmission: "manual" as "manual" | "automatic",
     fuel: "Gasoline",
     year: new Date().getFullYear(),
     description: ""
   });
   
   useEffect(() => {
-    // Here you would fetch data from your API
-    // For now, use sample data
     setCars(SAMPLE_CARS);
     setFilteredCars(SAMPLE_CARS);
   }, []);
@@ -121,18 +118,15 @@ const AdminCars = () => {
   useEffect(() => {
     let filtered = cars;
     
-    // Filter by category
     if (selectedCategory !== "All") {
       filtered = filtered.filter(car => car.category === selectedCategory);
     }
     
-    // Filter by status
     if (selectedStatus !== "All") {
       const status = selectedStatus.toLowerCase() as 'available' | 'reserved' | 'hidden';
       filtered = filtered.filter(car => car.status === status);
     }
     
-    // Filter by search term
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(car => 
@@ -146,30 +140,24 @@ const AdminCars = () => {
   }, [selectedCategory, selectedStatus, searchTerm, cars]);
   
   const handleAddCar = () => {
-    // Generate a random ID for the new car
     const newId = Math.random().toString(36).substring(2, 9);
     
-    // Create the new car object
     const newCar: AdminCar = {
       id: newId,
       ...formData,
       status: 'available',
       added: new Date().toISOString().split('T')[0],
-      reservations: 0,
-      transmission: formData.transmission as "manual" | "automatic"
+      reservations: 0
     };
     
-    // Add the new car to the state
     setCars(prevCars => [...prevCars, newCar]);
     
-    // Show success message
     toast({
       title: "Car Added",
       description: `${formData.name} has been added to your fleet.`,
       duration: 3000,
     });
     
-    // Reset form and close modal
     setFormData({
       name: "",
       category: "Economy",
@@ -203,7 +191,6 @@ const AdminCars = () => {
   const handleUpdateCar = () => {
     if (!selectedCar) return;
     
-    // Update the car in the state
     setCars(prevCars => 
       prevCars.map(car => 
         car.id === selectedCar.id 
@@ -212,14 +199,12 @@ const AdminCars = () => {
       )
     );
     
-    // Show success message
     toast({
       title: "Car Updated",
       description: `${formData.name} has been updated.`,
       duration: 3000,
     });
     
-    // Reset form and close modal
     setFormData({
       name: "",
       category: "Economy",
@@ -243,26 +228,21 @@ const AdminCars = () => {
   const confirmDelete = () => {
     if (!selectedCar) return;
     
-    // Remove the car from the state
     setCars(prevCars => prevCars.filter(car => car.id !== selectedCar.id));
     
-    // Show success message
     toast({
       title: "Car Deleted",
       description: `${selectedCar.name} has been removed from your fleet.`,
       duration: 3000,
     });
     
-    // Reset and close modal
     setSelectedCar(null);
     setShowDeleteModal(false);
   };
   
   const toggleCarVisibility = (car: AdminCar) => {
-    // Toggle between available and hidden status
     const newStatus = car.status === 'hidden' ? 'available' : 'hidden';
     
-    // Update the car in the state
     setCars(prevCars => 
       prevCars.map(c => 
         c.id === car.id 
@@ -271,7 +251,6 @@ const AdminCars = () => {
       )
     );
     
-    // Show success message
     toast({
       title: newStatus === 'hidden' ? "Car Hidden" : "Car Visible",
       description: `${car.name} is now ${newStatus === 'hidden' ? 'hidden from' : 'visible on'} the website.`,
@@ -281,10 +260,18 @@ const AdminCars = () => {
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ 
-      ...prev, 
-      [name]: name === 'price' || name === 'seats' || name === 'year' ? Number(value) : value 
-    }));
+    
+    if (name === 'transmission') {
+      setFormData(prev => ({ 
+        ...prev, 
+        [name]: value as "manual" | "automatic" 
+      }));
+    } else {
+      setFormData(prev => ({ 
+        ...prev, 
+        [name]: name === 'price' || name === 'seats' || name === 'year' ? Number(value) : value 
+      }));
+    }
   };
 
   return (
@@ -318,10 +305,8 @@ const AdminCars = () => {
         </button>
       </div>
       
-      {/* Filters */}
       <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
         <div className="flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4">
-          {/* Search */}
           <div className="relative flex-1">
             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
               <Search className="w-5 h-5 text-gray-400" />
@@ -335,7 +320,6 @@ const AdminCars = () => {
             />
           </div>
           
-          {/* Category Filter */}
           <div className="w-full md:w-auto">
             <label className="inline-flex items-center">
               <Filter size={16} className="mr-2 text-gray-500" />
@@ -352,7 +336,6 @@ const AdminCars = () => {
             </select>
           </div>
           
-          {/* Status Filter */}
           <div className="w-full md:w-auto">
             <label className="inline-flex items-center">
               <Filter size={16} className="mr-2 text-gray-500" />
@@ -371,7 +354,6 @@ const AdminCars = () => {
         </div>
       </div>
       
-      {/* Cars Table */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -463,7 +445,6 @@ const AdminCars = () => {
         </div>
       </div>
       
-      {/* Add/Edit Car Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -646,7 +627,6 @@ const AdminCars = () => {
         </div>
       )}
       
-      {/* Delete Confirmation Modal */}
       {showDeleteModal && selectedCar && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md">

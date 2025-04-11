@@ -101,7 +101,11 @@ const AdminContact = () => {
   const [locations, setLocations] = useState<LocationInfo[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    type: 'address' | 'phone' | 'email' | 'social' | 'hours';
+    label: string;
+    value: string;
+  }>({
     type: 'phone',
     label: '',
     value: ''
@@ -206,7 +210,16 @@ const AdminContact = () => {
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    if (name === 'type') {
+      // Ensure type is cast to the correct union type
+      setFormData(prev => ({ 
+        ...prev, 
+        [name]: value as 'address' | 'phone' | 'email' | 'social' | 'hours' 
+      }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
   
   // Group contact info by type for easier display
