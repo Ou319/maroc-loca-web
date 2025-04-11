@@ -1,8 +1,9 @@
 
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import Layout from "@/components/Layout";
-import CarCard, { CarType } from "@/components/CarCard";
+import { CarType } from "@/components/CarCard";
 import { Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -100,7 +101,7 @@ const CarsPage = () => {
           backgroundPosition: 'center'
         }}
       >
-        <div className="container-custom relative z-10 text-white">
+        <div className="container mx-auto px-4 relative z-10 text-white">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
             {t("cars.title")}
           </h1>
@@ -111,63 +112,53 @@ const CarsPage = () => {
       </section>
       
       {/* Cars Section */}
-      <section className="section">
-        <div className="container-custom">
-          {/* Filters */}
-          <div className="bg-white rounded-xl shadow-md p-6 mb-10">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Search */}
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                  <Search className="w-5 h-5 text-gray-400" />
-                </div>
-                <input 
-                  type="text" 
-                  className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full pl-10 p-2.5 focus:outline-none focus:ring-2 focus:ring-morocco-primary"
-                  placeholder={t("cars.search")}
-                  value={searchTerm}
-                  onChange={handleSearchChange}
-                />
+      <section className="py-16">
+        <div className="container mx-auto px-4">
+          {/* Search Bar */}
+          <div className="bg-white rounded-xl shadow-md p-6 mb-10 max-w-4xl mx-auto">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <Search className="w-5 h-5 text-gray-400" />
               </div>
-              
-              {/* Category Tabs */}
-              <div className="col-span-2">
-                <div className="flex flex-wrap gap-2">
-                  {CATEGORIES.map(category => (
-                    <button
-                      key={category}
-                      onClick={() => handleCategoryChange(category)}
-                      className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                        selectedCategory === category 
-                          ? "bg-morocco-primary text-white" 
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                      }`}
-                    >
-                      {category === "All" ? t("cars.filter.all") : category}
-                    </button>
-                  ))}
-                </div>
+              <input 
+                type="text" 
+                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full pl-10 p-3 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                placeholder={t("cars.search")}
+                value={searchTerm}
+                onChange={handleSearchChange}
+              />
+            </div>
+            
+            {/* Category Tabs */}
+            <div className="mt-6">
+              <div className="flex flex-wrap gap-2">
+                {CATEGORIES.map(category => (
+                  <button
+                    key={category}
+                    onClick={() => handleCategoryChange(category)}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                      selectedCategory === category 
+                        ? "bg-teal-500 text-white" 
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    {category === "All" ? t("cars.filter.all") : category}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
           
           {/* Cars Grid */}
           {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
               {[1, 2, 3, 4, 5, 6].map(i => (
-                <div key={i} className="car-card animate-pulse">
+                <div key={i} className="bg-white rounded-lg shadow-md overflow-hidden animate-pulse">
                   <div className="h-48 bg-gray-200"></div>
-                  <div className="p-4">
+                  <div className="p-6">
                     <div className="h-6 bg-gray-200 rounded mb-4 w-3/4"></div>
-                    <div className="flex flex-wrap gap-3 mb-4">
-                      {[1, 2, 3, 4].map(j => (
-                        <div key={j} className="h-6 bg-gray-200 rounded w-16"></div>
-                      ))}
-                    </div>
-                    <div className="flex gap-2 mt-3">
-                      <div className="h-10 bg-gray-200 rounded flex-1"></div>
-                      <div className="h-10 bg-gray-200 rounded flex-1"></div>
-                    </div>
+                    <div className="h-4 bg-gray-200 rounded mb-4"></div>
+                    <div className="h-10 bg-gray-200 rounded mt-6"></div>
                   </div>
                 </div>
               ))}
@@ -182,9 +173,37 @@ const CarsPage = () => {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
               {filteredCars.map(car => (
-                <CarCard key={car.id} car={car} />
+                <div key={car.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                  <img 
+                    src={car.image} 
+                    alt={car.name} 
+                    className="w-full h-48 object-cover"
+                  />
+                  <div className="p-6">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="text-xl font-bold text-gray-800">{car.name}</h3>
+                      <span className="bg-teal-100 text-teal-800 text-xs px-2 py-1 rounded">{car.category}</span>
+                    </div>
+                    <p className="text-gray-600 mb-4 line-clamp-2">{car.description}</p>
+                    <div className="flex flex-wrap gap-3 text-sm text-gray-500 mb-4">
+                      <span>{car.seats} Seats</span>
+                      <span>{car.transmission}</span>
+                      <span>{car.fuel}</span>
+                      <span>{car.year}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <p className="text-xl font-bold text-teal-600">{car.price} MAD<span className="text-sm font-normal text-gray-500">/day</span></p>
+                      <Link 
+                        to={`/cars/${car.id}`}
+                        className="bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded font-medium text-sm transition-colors"
+                      >
+                        View Details
+                      </Link>
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
           )}

@@ -10,7 +10,7 @@ const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
   
-  // Sample company info - would come from database
+  // Company info
   const companyInfo = {
     name: "Maroc Loca",
     phone: "+212 6 12 34 56 78",
@@ -45,12 +45,12 @@ const Navbar = () => {
         isScrolled ? "bg-white shadow-md py-2" : "bg-transparent py-4"
       }`}
     >
-      <div className="container-custom">
+      <div className="container mx-auto px-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link 
             to="/" 
-            className="text-2xl md:text-3xl font-bold text-morocco-primary"
+            className="text-2xl md:text-3xl font-bold text-teal-500"
             onClick={closeMenu}
           >
             {companyInfo.name}
@@ -60,25 +60,25 @@ const Navbar = () => {
           <nav className="hidden md:flex items-center space-x-8">
             <Link 
               to="/" 
-              className={`navbar-link ${location.pathname === "/" ? "text-morocco-primary after:w-full" : ""}`}
+              className={`transition-colors hover:text-teal-500 ${location.pathname === "/" ? "text-teal-500 font-medium" : "text-gray-700"}`}
             >
               {t("navbar.home")}
             </Link>
             <Link 
               to="/cars" 
-              className={`navbar-link ${location.pathname === "/cars" ? "text-morocco-primary after:w-full" : ""}`}
+              className={`transition-colors hover:text-teal-500 ${location.pathname.includes("/cars") ? "text-teal-500 font-medium" : "text-gray-700"}`}
             >
               {t("navbar.cars")}
             </Link>
             <Link 
               to="/location" 
-              className={`navbar-link ${location.pathname === "/location" ? "text-morocco-primary after:w-full" : ""}`}
+              className={`transition-colors hover:text-teal-500 ${location.pathname === "/location" ? "text-teal-500 font-medium" : "text-gray-700"}`}
             >
               {t("navbar.location")}
             </Link>
             <Link 
               to="/about" 
-              className={`navbar-link ${location.pathname === "/about" ? "text-morocco-primary after:w-full" : ""}`}
+              className={`transition-colors hover:text-teal-500 ${location.pathname === "/about" ? "text-teal-500 font-medium" : "text-gray-700"}`}
             >
               {t("navbar.about")}
             </Link>
@@ -94,7 +94,7 @@ const Navbar = () => {
                 <Globe size={16} />
                 <span className="uppercase">{language}</span>
               </button>
-              <div className="absolute right-0 mt-2 bg-white shadow-lg rounded-lg overflow-hidden scale-0 group-hover:scale-100 transition-transform origin-top-right">
+              <div className="absolute right-0 mt-2 bg-white shadow-lg rounded-lg overflow-hidden scale-0 group-hover:scale-100 transition-transform origin-top-right z-20">
                 <button
                   onClick={() => handleLanguageChange('ar')}
                   className={`block w-full text-left px-4 py-2 hover:bg-gray-50 ${language === 'ar' ? 'bg-gray-100' : ''}`}
@@ -181,7 +181,7 @@ const Navbar = () => {
               <button
                 onClick={() => handleLanguageChange('ar')}
                 className={`px-4 py-2 rounded-md ${
-                  language === 'ar' ? 'bg-morocco-primary text-white' : 'bg-gray-100'
+                  language === 'ar' ? 'bg-teal-500 text-white' : 'bg-gray-100'
                 }`}
               >
                 العربية
@@ -189,7 +189,7 @@ const Navbar = () => {
               <button
                 onClick={() => handleLanguageChange('fr')}
                 className={`px-4 py-2 rounded-md ${
-                  language === 'fr' ? 'bg-morocco-primary text-white' : 'bg-gray-100'
+                  language === 'fr' ? 'bg-teal-500 text-white' : 'bg-gray-100'
                 }`}
               >
                 Français
@@ -197,7 +197,7 @@ const Navbar = () => {
               <button
                 onClick={() => handleLanguageChange('en')}
                 className={`px-4 py-2 rounded-md ${
-                  language === 'en' ? 'bg-morocco-primary text-white' : 'bg-gray-100'
+                  language === 'en' ? 'bg-teal-500 text-white' : 'bg-gray-100'
                 }`}
               >
                 English

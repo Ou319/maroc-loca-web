@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
 import { Lock, User } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const AdminLogin = () => {
   const { t } = useLanguage();
@@ -24,38 +25,53 @@ const AdminLogin = () => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate authentication - in a real app, this would validate against a database
-    setTimeout(() => {
-      // For demo purposes, accept any admin/admin login
-      if (credentials.username === "admin" && credentials.password === "admin") {
-        toast({
-          title: "Login successful",
-          description: "Welcome to the admin dashboard!",
-          duration: 3000,
-        });
-        navigate("/admin");
-      } else {
+    try {
+      // Check admin credentials from the database
+      const { data, error } = await supabase
+        .from('admin_users')
+        .select('*')
+        .eq('username', credentials.username)
+        .eq('password', credentials.password)
+        .single();
+      
+      if (error || !data) {
         toast({
           title: "Login failed",
           description: "Invalid username or password",
           variant: "destructive",
           duration: 3000,
         });
+      } else {
+        toast({
+          title: "Login successful",
+          description: "Welcome to the admin dashboard!",
+          duration: 3000,
+        });
+        navigate("/admin");
       }
+    } catch (error) {
+      console.error("Login error:", error);
+      toast({
+        title: "Login failed",
+        description: "There was an error processing your request",
+        variant: "destructive",
+        duration: 3000,
+      });
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold text-morocco-primary mb-2">Maroc Loca</h1>
+          <h1 className="text-4xl font-bold text-teal-500 mb-2">Maroc Loca</h1>
           <p className="text-gray-600">Admin Dashboard</p>
         </div>
         
         <div className="bg-white shadow-md rounded-xl p-8">
-          <h2 className="text-2xl font-bold mb-6 text-center text-morocco-secondary">
+          <h2 className="text-2xl font-bold mb-6 text-center text-teal-700">
             {t("admin.login.title")}
           </h2>
           
@@ -76,7 +92,7 @@ const AdminLogin = () => {
                   required
                   value={credentials.username}
                   onChange={handleChange}
-                  className="pl-10 w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-morocco-primary"
+                  className="pl-10 w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                   placeholder="Enter your username"
                 />
               </div>
@@ -98,7 +114,7 @@ const AdminLogin = () => {
                   required
                   value={credentials.password}
                   onChange={handleChange}
-                  className="pl-10 w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-morocco-primary"
+                  className="pl-10 w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                   placeholder="Enter your password"
                 />
               </div>
@@ -107,7 +123,7 @@ const AdminLogin = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className={`w-full bg-morocco-primary text-white py-2 px-4 rounded-lg hover:bg-opacity-90 transition-colors ${
+              className={`w-full bg-teal-500 text-white py-2 px-4 rounded-lg hover:bg-teal-600 transition-colors ${
                 isLoading ? "opacity-70 cursor-not-allowed" : ""
               }`}
             >
@@ -117,7 +133,7 @@ const AdminLogin = () => {
           
           <div className="mt-6 text-center text-sm">
             <p className="text-gray-600">
-              Hint: For demo purposes, use username "admin" and password "admin"
+              Use your admin credentials to access the dashboard
             </p>
           </div>
         </div>
@@ -125,7 +141,7 @@ const AdminLogin = () => {
         <div className="mt-6 text-center">
           <a 
             href="/" 
-            className="text-morocco-secondary hover:underline"
+            className="text-teal-600 hover:underline"
           >
             ← Return to main website
           </a>

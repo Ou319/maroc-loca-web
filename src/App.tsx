@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { LanguageProvider } from "./contexts/LanguageContext";
 import Index from "./pages/Index";
 import Cars from "./pages/Cars";
+import CarDetails from "./pages/CarDetails";
 import Location from "./pages/Location";
 import About from "./pages/About";
 import AdminLogin from "./pages/AdminLogin";
@@ -28,9 +29,10 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/cars" element={<Cars />} />
+            <Route path="/cars/:id" element={<CarDetails />} />
             <Route path="/location" element={<Location />} />
             <Route path="/about" element={<About />} />
-            <Route path="/imran123" element={<AdminLogin />} />
+            <Route path="/admin-login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/cars" element={<AdminCars />} />
             <Route path="/admin/users" element={<AdminUsers />} />

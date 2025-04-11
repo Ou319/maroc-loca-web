@@ -53,12 +53,18 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
-				morocco: {
-					primary: '#E06D44', // Terracotta orange
-					secondary: '#265D97', // Deep blue
-					tertiary: '#F2D5B8', // Sand/beige
-					dark: '#2D2A32', // Dark gray for text
-					accent: '#FFC857', // Warm yellow accent
+				teal: {
+					50: '#f0fdfa',
+					100: '#ccfbf1',
+					200: '#99f6e4',
+					300: '#5eead4',
+					400: '#2dd4bf',
+					500: '#14b8a6',
+					600: '#0d9488',
+					700: '#0f766e',
+					800: '#115e59',
+					900: '#134e4a',
+					950: '#042f2e',
 				}
 			},
 			borderRadius: {
