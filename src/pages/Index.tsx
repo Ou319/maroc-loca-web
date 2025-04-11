@@ -5,54 +5,23 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import Layout from "@/components/Layout";
 import CarCard, { CarType } from "@/components/CarCard";
 import { Star, Shield, Clock, Car, ChevronRight } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
-// Sample data - would come from database
-const SAMPLE_CARS: CarType[] = [
-  {
-    id: "1",
-    name: "Dacia Duster",
-    category: "SUV",
-    price: 400,
-    image: "https://images.unsplash.com/photo-1580273916550-e323be2ae537?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    seats: 5,
-    transmission: "manual",
-    fuel: "Diesel",
-    year: 2022,
-    description: "The perfect SUV for Moroccan roads, combining comfort and practicality."
-  },
-  {
-    id: "2",
-    name: "Renault Clio",
-    category: "Economy",
-    price: 250,
-    image: "https://images.unsplash.com/photo-1590362891991-f776e747a588?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    seats: 5,
-    transmission: "manual",
-    fuel: "Gasoline",
-    year: 2023,
-    description: "Fuel-efficient and easy to drive, ideal for city exploration."
-  },
-  {
-    id: "3",
-    name: "Mercedes C-Class",
-    category: "Luxury",
-    price: 700,
-    image: "https://images.unsplash.com/photo-1617814076229-810246fb238e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    seats: 5,
-    transmission: "automatic",
-    fuel: "Gasoline",
-    year: 2022,
-    description: "Experience luxury and performance during your stay in Morocco."
-  }
-];
+interface HeroContent {
+  title: string;
+  subtitle: string;
+  image: string;
+}
 
-// Sample banner data - would come from database
-const HERO_DATA = {
-  title: "Rent Your Perfect Car in Morocco",
-  subtitle: "Experience the beauty of Morocco with our premium car rental service",
-  image: "https://images.unsplash.com/photo-1603544741772-64d91dbe483c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80"
-};
+interface AboutContent {
+  title: string;
+  subtitle: string;
+  content: string;
+  image: string;
+}
 
+// Sample feature data - would be retrieved from database in a real app
 const FEATURES_DATA = [
   {
     icon: <Star className="w-10 h-10 text-morocco-primary" />,
@@ -78,12 +47,98 @@ const FEATURES_DATA = [
 
 const HomePage = () => {
   const { t, language } = useLanguage();
+  const { toast } = useToast();
   const [featuredCars, setFeaturedCars] = useState<CarType[]>([]);
+  const [heroContent, setHeroContent] = useState<HeroContent>({
+    title: "Rent Your Perfect Car in Morocco",
+    subtitle: "Experience the beauty of Morocco with our premium car rental service",
+    image: "https://images.unsplash.com/photo-1603544741772-64d91dbe483c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80"
+  });
+  const [aboutContent, setAboutContent] = useState<AboutContent>({
+    title: "About Maroc Loca",
+    subtitle: "Your trusted partner for exploring Morocco",
+    content: "Maroc Loca is Morocco's premier car rental service, providing high-quality vehicles for tourists and business travelers alike.",
+    image: "https://images.unsplash.com/photo-1605102977715-c80c40a1fd72?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"
+  });
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
-    // Here you would fetch data from your API
-    // For now, use sample data
-    setFeaturedCars(SAMPLE_CARS);
+    async function fetchData() {
+      setIsLoading(true);
+      try {
+        // Fetch cars from the database
+        const { data: carsData, error: carsError } = await supabase
+          .from('cars')
+          .select('*')
+          .eq('status', 'available')
+          .order('created_at', { ascending: false })
+          .limit(3);
+        
+        if (carsError) throw carsError;
+        
+        if (carsData) {
+          const formattedCars = carsData.map(car => ({
+            id: car.id,
+            name: car.name,
+            category: car.category,
+            price: car.price,
+            image: car.image,
+            seats: car.seats,
+            transmission: car.transmission as "manual" | "automatic",
+            fuel: car.fuel,
+            year: car.year,
+            description: car.description
+          }));
+          setFeaturedCars(formattedCars);
+        }
+        
+        // Fetch hero content
+        const { data: heroData, error: heroError } = await supabase
+          .from('homepage_content')
+          .select('*')
+          .eq('section', 'hero')
+          .single();
+          
+        if (heroError && heroError.code !== 'PGRST116') throw heroError;
+        
+        if (heroData) {
+          setHeroContent({
+            title: heroData.title || heroContent.title,
+            subtitle: heroData.subtitle || heroContent.subtitle,
+            image: heroData.image || heroContent.image
+          });
+        }
+        
+        // Fetch about content
+        const { data: aboutData, error: aboutError } = await supabase
+          .from('homepage_content')
+          .select('*')
+          .eq('section', 'about')
+          .single();
+          
+        if (aboutError && aboutError.code !== 'PGRST116') throw aboutError;
+        
+        if (aboutData) {
+          setAboutContent({
+            title: aboutData.title || aboutContent.title,
+            subtitle: aboutData.subtitle || aboutContent.subtitle,
+            content: aboutData.content || aboutContent.content,
+            image: aboutData.image || aboutContent.image
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching homepage data:", error);
+        toast({
+          title: "Failed to load content",
+          description: "Please refresh the page to try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    fetchData();
   }, []);
 
   return (
@@ -92,15 +147,15 @@ const HomePage = () => {
       <section 
         className="relative h-screen flex items-center"
         style={{
-          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(${HERO_DATA.image})`,
+          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(${heroContent.image})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center'
         }}
       >
         <div className="container-custom relative z-10 text-white">
           <div className="max-w-3xl animate-fade-in">
-            <h1 className="text-4xl md:text-6xl font-bold mb-4">{t("home.hero.title")}</h1>
-            <p className="text-xl mb-8">{t("home.hero.subtitle")}</p>
+            <h1 className="text-4xl md:text-6xl font-bold mb-4">{heroContent.title}</h1>
+            <p className="text-xl mb-8">{heroContent.subtitle}</p>
             <Link 
               to="/cars" 
               className="btn-primary inline-flex items-center"
@@ -124,11 +179,33 @@ const HomePage = () => {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredCars.map(car => (
-              <CarCard key={car.id} car={car} />
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="car-card animate-pulse">
+                  <div className="h-48 bg-gray-200"></div>
+                  <div className="p-4">
+                    <div className="h-6 bg-gray-200 rounded mb-4 w-3/4"></div>
+                    <div className="flex flex-wrap gap-3 mb-4">
+                      {[1, 2, 3, 4].map(j => (
+                        <div key={j} className="h-6 bg-gray-200 rounded w-16"></div>
+                      ))}
+                    </div>
+                    <div className="flex gap-2 mt-3">
+                      <div className="h-10 bg-gray-200 rounded flex-1"></div>
+                      <div className="h-10 bg-gray-200 rounded flex-1"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {featuredCars.map(car => (
+                <CarCard key={car.id} car={car} />
+              ))}
+            </div>
+          )}
           
           <div className="text-center mt-10">
             <Link 
@@ -177,13 +254,10 @@ const HomePage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                {t("home.about.title")}
+                {aboutContent.title}
               </h2>
               <p className="text-white/90 mb-6">
-                Maroc Loca is Morocco's premier car rental service, providing high-quality vehicles for tourists and business travelers alike. With our extensive fleet of cars, from economical options to luxury vehicles, we ensure you have the perfect car for your journey.
-              </p>
-              <p className="text-white/90 mb-8">
-                Founded with a passion for exceptional service, we've been helping visitors explore the beauty of Morocco for over 10 years.
+                {aboutContent.content}
               </p>
               <Link 
                 to="/about" 
@@ -196,7 +270,7 @@ const HomePage = () => {
             
             <div className="rounded-xl overflow-hidden shadow-xl">
               <img 
-                src="https://images.unsplash.com/photo-1605102977715-c80c40a1fd72?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" 
+                src={aboutContent.image}
                 alt="Maroc Loca Team" 
                 className="w-full h-auto"
               />

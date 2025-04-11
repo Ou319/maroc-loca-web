@@ -9,7 +9,176 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      admin_users: {
+        Row: {
+          created_at: string | null
+          id: string
+          password: string
+          username: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          password: string
+          username: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          password?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      cars: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string
+          fuel: string
+          id: string
+          image: string
+          name: string
+          price: number
+          seats: number
+          status: string
+          transmission: string
+          year: number
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description: string
+          fuel: string
+          id?: string
+          image: string
+          name: string
+          price: number
+          seats: number
+          status?: string
+          transmission: string
+          year: number
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string
+          fuel?: string
+          id?: string
+          image?: string
+          name?: string
+          price?: number
+          seats?: number
+          status?: string
+          transmission?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      contact_info: {
+        Row: {
+          created_at: string | null
+          id: string
+          label: string
+          type: string
+          value: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          label: string
+          type: string
+          value: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          label?: string
+          type?: string
+          value?: string
+        }
+        Relationships: []
+      }
+      homepage_content: {
+        Row: {
+          content: string | null
+          created_at: string | null
+          id: string
+          image: string | null
+          section: string
+          subtitle: string | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          image?: string | null
+          section: string
+          subtitle?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          image?: string | null
+          section?: string
+          subtitle?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      reservations: {
+        Row: {
+          car_id: string
+          city: string
+          created_at: string | null
+          first_name: string
+          id: string
+          last_name: string
+          phone: string
+          pickup_date: string
+          return_date: string
+          status: string
+        }
+        Insert: {
+          car_id: string
+          city: string
+          created_at?: string | null
+          first_name: string
+          id?: string
+          last_name: string
+          phone: string
+          pickup_date: string
+          return_date: string
+          status?: string
+        }
+        Update: {
+          car_id?: string
+          city?: string
+          created_at?: string | null
+          first_name?: string
+          id?: string
+          last_name?: string
+          phone?: string
+          pickup_date?: string
+          return_date?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservations_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

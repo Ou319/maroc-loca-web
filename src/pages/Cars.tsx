@@ -4,97 +4,60 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import Layout from "@/components/Layout";
 import CarCard, { CarType } from "@/components/CarCard";
 import { Search } from "lucide-react";
-
-// Expanded sample data - would come from database
-const SAMPLE_CARS: CarType[] = [
-  {
-    id: "1",
-    name: "Dacia Duster",
-    category: "SUV",
-    price: 400,
-    image: "https://images.unsplash.com/photo-1580273916550-e323be2ae537?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    seats: 5,
-    transmission: "manual",
-    fuel: "Diesel",
-    year: 2022,
-    description: "The perfect SUV for Moroccan roads, combining comfort and practicality."
-  },
-  {
-    id: "2",
-    name: "Renault Clio",
-    category: "Economy",
-    price: 250,
-    image: "https://images.unsplash.com/photo-1590362891991-f776e747a588?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    seats: 5,
-    transmission: "manual",
-    fuel: "Gasoline",
-    year: 2023,
-    description: "Fuel-efficient and easy to drive, ideal for city exploration."
-  },
-  {
-    id: "3",
-    name: "Mercedes C-Class",
-    category: "Luxury",
-    price: 700,
-    image: "https://images.unsplash.com/photo-1617814076229-810246fb238e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    seats: 5,
-    transmission: "automatic",
-    fuel: "Gasoline",
-    year: 2022,
-    description: "Experience luxury and performance during your stay in Morocco."
-  },
-  {
-    id: "4",
-    name: "Range Rover Evoque",
-    category: "SUV",
-    price: 800,
-    image: "https://images.unsplash.com/photo-1551522355-5d3a5c3221b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    seats: 5,
-    transmission: "automatic",
-    fuel: "Diesel",
-    year: 2023,
-    description: "A premium SUV with exceptional off-road capabilities."
-  },
-  {
-    id: "5",
-    name: "Fiat 500",
-    category: "Economy",
-    price: 200,
-    image: "https://images.unsplash.com/photo-1592194869945-e2c8c8678606?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    seats: 4,
-    transmission: "manual",
-    fuel: "Gasoline",
-    year: 2022,
-    description: "Compact and stylish, perfect for navigating narrow city streets."
-  },
-  {
-    id: "6",
-    name: "BMW 5 Series",
-    category: "Luxury",
-    price: 850,
-    image: "https://images.unsplash.com/photo-1520050364275-eba06a0153ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    seats: 5,
-    transmission: "automatic",
-    fuel: "Gasoline",
-    year: 2023,
-    description: "Combining luxury with driving pleasure for a premium experience."
-  }
-];
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const CATEGORIES = ["All", "Economy", "SUV", "Luxury"];
 
 const CarsPage = () => {
   const { t } = useLanguage();
+  const { toast } = useToast();
   const [cars, setCars] = useState<CarType[]>([]);
   const [filteredCars, setFilteredCars] = useState<CarType[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
-    // Here you would fetch data from your API
-    // For now, use sample data
-    setCars(SAMPLE_CARS);
-    setFilteredCars(SAMPLE_CARS);
+    async function fetchCars() {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('cars')
+          .select('*')
+          .eq('status', 'available');
+          
+        if (error) throw error;
+        
+        if (data) {
+          const formattedCars = data.map(car => ({
+            id: car.id,
+            name: car.name,
+            category: car.category,
+            price: car.price,
+            image: car.image,
+            seats: car.seats,
+            transmission: car.transmission as "manual" | "automatic",
+            fuel: car.fuel,
+            year: car.year,
+            description: car.description
+          }));
+          setCars(formattedCars);
+          setFilteredCars(formattedCars);
+        }
+      } catch (error) {
+        console.error("Error fetching cars:", error);
+        toast({
+          title: "Failed to load cars",
+          description: "Please refresh the page to try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    fetchCars();
   }, []);
   
   useEffect(() => {
@@ -189,7 +152,27 @@ const CarsPage = () => {
           </div>
           
           {/* Cars Grid */}
-          {filteredCars.length === 0 ? (
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[1, 2, 3, 4, 5, 6].map(i => (
+                <div key={i} className="car-card animate-pulse">
+                  <div className="h-48 bg-gray-200"></div>
+                  <div className="p-4">
+                    <div className="h-6 bg-gray-200 rounded mb-4 w-3/4"></div>
+                    <div className="flex flex-wrap gap-3 mb-4">
+                      {[1, 2, 3, 4].map(j => (
+                        <div key={j} className="h-6 bg-gray-200 rounded w-16"></div>
+                      ))}
+                    </div>
+                    <div className="flex gap-2 mt-3">
+                      <div className="h-10 bg-gray-200 rounded flex-1"></div>
+                      <div className="h-10 bg-gray-200 rounded flex-1"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : filteredCars.length === 0 ? (
             <div className="text-center py-10">
               <h3 className="text-xl font-medium text-gray-600 mb-2">
                 {t("cars.noResults")}

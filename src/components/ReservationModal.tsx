@@ -1,9 +1,10 @@
 
 import { useState } from "react";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { X } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { CarType } from "./CarCard";
+import { Calendar, Car, CreditCard, Phone, User } from "lucide-react";
 
 interface ReservationModalProps {
   isOpen: boolean;
@@ -12,7 +13,6 @@ interface ReservationModalProps {
 }
 
 const ReservationModal = ({ isOpen, onClose, car }: ReservationModalProps) => {
-  const { t, language } = useLanguage();
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     firstName: "",
@@ -24,28 +24,76 @@ const ReservationModal = ({ isOpen, onClose, car }: ReservationModalProps) => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
   
+  const validateForm = () => {
+    if (!formData.firstName || !formData.lastName || !formData.phone || 
+        !formData.city || !formData.pickupDate || !formData.returnDate) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all the required fields.",
+        variant: "destructive",
+      });
+      return false;
+    }
+    
+    const pickup = new Date(formData.pickupDate);
+    const returnDate = new Date(formData.returnDate);
+    
+    if (pickup < new Date()) {
+      toast({
+        title: "Invalid date",
+        description: "Pickup date cannot be in the past.",
+        variant: "destructive",
+      });
+      return false;
+    }
+    
+    if (returnDate <= pickup) {
+      toast({
+        title: "Invalid date range",
+        description: "Return date must be after pickup date.",
+        variant: "destructive",
+      });
+      return false;
+    }
+    
+    return true;
+  };
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) return;
+    
     setIsSubmitting(true);
     
-    // Here you would typically send the reservation data to your backend
-    // For now, let's simulate an API call with a timeout
-    setTimeout(() => {
-      console.log("Reservation submitted:", { car, ...formData });
+    try {
+      // Submit to Supabase
+      const { error } = await supabase
+        .from('reservations')
+        .insert({
+          car_id: car.id,
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          phone: formData.phone,
+          city: formData.city,
+          pickup_date: new Date(formData.pickupDate).toISOString(),
+          return_date: new Date(formData.returnDate).toISOString(),
+          status: 'pending'
+        });
+        
+      if (error) throw error;
       
       toast({
-        title: "Reservation Submitted",
-        description: "We'll contact you shortly to confirm your reservation.",
-        duration: 5000,
+        title: "Reservation submitted!",
+        description: "We will contact you shortly to confirm your reservation.",
       });
       
-      setIsSubmitting(false);
-      onClose();
+      // Reset form and close modal
       setFormData({
         firstName: "",
         lastName: "",
@@ -54,142 +102,221 @@ const ReservationModal = ({ isOpen, onClose, car }: ReservationModalProps) => {
         pickupDate: "",
         returnDate: ""
       });
-    }, 1500);
+      onClose();
+      
+    } catch (error) {
+      console.error("Error submitting reservation:", error);
+      toast({
+        title: "Submission failed",
+        description: "There was an error submitting your reservation. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
-  if (!isOpen) return null;
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleDateString();
+  };
   
+  const calculateTotal = () => {
+    if (!formData.pickupDate || !formData.returnDate) return 0;
+    
+    const pickup = new Date(formData.pickupDate);
+    const returnDate = new Date(formData.returnDate);
+    const days = Math.ceil((returnDate.getTime() - pickup.getTime()) / (1000 * 60 * 60 * 24));
+    
+    return days * car.price;
+  };
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div 
-        className={`bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto ${
-          language === 'ar' ? 'text-right' : 'text-left'
-        }`}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b">
-          <h3 className="text-xl font-bold text-morocco-secondary">
-            {t("cars.reserve")} - {car.name}
-          </h3>
-          <button 
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
-          >
-            <X size={20} />
-          </button>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-md md:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="text-xl md:text-2xl">
+            Reserve Your {car.name}
+          </DialogTitle>
+        </DialogHeader>
+        
+        {/* Car Details */}
+        <div className="flex flex-col md:flex-row items-start md:items-center mb-6 pb-6 border-b">
+          <div className="w-full md:w-auto md:mr-6 mb-4 md:mb-0">
+            <img 
+              src={car.image}
+              alt={car.name}
+              className="w-full md:w-32 h-auto md:h-24 rounded-md object-cover"
+            />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-bold text-lg">{car.name}</h3>
+            <div className="flex flex-wrap gap-2 mt-2 text-sm">
+              <span className="bg-gray-100 px-2 py-1 rounded">{car.category}</span>
+              <span className="bg-gray-100 px-2 py-1 rounded">{car.seats} seats</span>
+              <span className="bg-gray-100 px-2 py-1 rounded">{car.transmission}</span>
+              <span className="bg-gray-100 px-2 py-1 rounded">{car.fuel}</span>
+            </div>
+            <p className="mt-2 text-morocco-primary font-semibold">{car.price} MAD / day</p>
+          </div>
         </div>
         
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t("form.name")}
-              </label>
-              <input
-                type="text"
-                name="firstName"
-                value={formData.firstName}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-morocco-primary"
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t("form.lastname")}
-              </label>
-              <input
-                type="text"
-                name="lastName"
-                value={formData.lastName}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-morocco-primary"
-                required
-              />
-            </div>
-          </div>
-          
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t("form.phone")}
-            </label>
-            <input
-              type="tel"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-morocco-primary"
-              required
-            />
-          </div>
-          
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t("form.city")}
-            </label>
-            <input
-              type="text"
-              name="city"
-              value={formData.city}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-morocco-primary"
-              required
-            />
-          </div>
-          
+        <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            {/* Personal Info */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t("form.pickup")}
-              </label>
-              <input
-                type="date"
-                name="pickupDate"
-                value={formData.pickupDate}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-morocco-primary"
-                required
-              />
+              <h4 className="font-semibold mb-3 flex items-center">
+                <User className="mr-2 h-4 w-4" /> Personal Information
+              </h4>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    First Name
+                  </label>
+                  <input
+                    type="text"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-morocco-primary"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-morocco-primary"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <Phone className="inline mr-1 h-4 w-4" /> Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-morocco-primary"
+                    placeholder="+212 6XX XXXXXX"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    City
+                  </label>
+                  <input
+                    type="text"
+                    name="city"
+                    value={formData.city}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-morocco-primary"
+                    required
+                  />
+                </div>
+              </div>
             </div>
             
+            {/* Rental Details */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t("form.return")}
-              </label>
-              <input
-                type="date"
-                name="returnDate"
-                value={formData.returnDate}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-morocco-primary"
-                required
-              />
+              <h4 className="font-semibold mb-3 flex items-center">
+                <Car className="mr-2 h-4 w-4" /> Rental Details
+              </h4>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <Calendar className="inline mr-1 h-4 w-4" /> Pickup Date
+                  </label>
+                  <input
+                    type="date"
+                    name="pickupDate"
+                    value={formData.pickupDate}
+                    onChange={handleChange}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-morocco-primary"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <Calendar className="inline mr-1 h-4 w-4" /> Return Date
+                  </label>
+                  <input
+                    type="date"
+                    name="returnDate"
+                    value={formData.returnDate}
+                    onChange={handleChange}
+                    min={formData.pickupDate || new Date().toISOString().split('T')[0]}
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-morocco-primary"
+                    required
+                  />
+                </div>
+                
+                {/* Pricing Summary */}
+                {formData.pickupDate && formData.returnDate && (
+                  <div className="bg-gray-50 p-3 rounded-md mt-4">
+                    <h5 className="font-medium mb-2 flex items-center">
+                      <CreditCard className="mr-2 h-4 w-4" /> Pricing Summary
+                    </h5>
+                    <div className="text-sm space-y-1">
+                      <div className="flex justify-between">
+                        <span>Dates:</span>
+                        <span>{formatDate(formData.pickupDate)} to {formatDate(formData.returnDate)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Daily Rate:</span>
+                        <span>{car.price} MAD</span>
+                      </div>
+                      <div className="flex justify-between font-bold pt-1 border-t mt-1">
+                        <span>Total:</span>
+                        <span>{calculateTotal()} MAD</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           
-          <div className="flex justify-end">
+          <div className="flex justify-between">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 mr-2"
+              className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              disabled={isSubmitting}
             >
-              {t("form.cancel")}
+              Cancel
             </button>
             <button
               type="submit"
+              className="px-6 py-2 bg-morocco-primary text-white rounded-md hover:bg-opacity-90 transition-colors flex items-center"
               disabled={isSubmitting}
-              className={`px-4 py-2 bg-morocco-primary text-white rounded-md hover:bg-opacity-90 transition-colors ${
-                isSubmitting ? "opacity-70 cursor-not-allowed" : ""
-              }`}
             >
-              {isSubmitting ? t("form.submitting") : t("form.submit")}
+              {isSubmitting ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Processing...
+                </>
+              ) : (
+                'Complete Reservation'
+              )}
             </button>
           </div>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
