@@ -182,7 +182,7 @@ const AdminDashboard = () => {
               <h2 className={`text-lg font-semibold mb-4 ${textColor}`}>Reservations by Month</h2>
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
+                  <BarChartIcon
                     data={reservationData}
                     margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                   >
@@ -198,7 +198,7 @@ const AdminDashboard = () => {
                     />
                     <Legend />
                     <Bar dataKey="reservations" fill="#E06D44" name="Reservations" />
-                  </BarChart>
+                  </BarChartIcon>
                 </ResponsiveContainer>
               </div>
             </div>
