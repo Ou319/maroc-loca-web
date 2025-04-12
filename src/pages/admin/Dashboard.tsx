@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { 
   BarChart as BarChartIcon,
   Bar,
@@ -33,6 +34,7 @@ const COLORS = ['#E06D44', '#265D97', '#F2D5B8', '#FFC857'];
 
 const AdminDashboard = () => {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const [stats, setStats] = useState<DashboardStats>({
     totalCars: 0,
     availableCars: 0,
@@ -86,8 +88,8 @@ const AdminDashboard = () => {
   return (
     <AdminLayout>
       <div className="mb-6">
-        <h1 className={`text-2xl font-bold ${textColor}`}>Dashboard</h1>
-        <p className={textMutedColor}>Welcome to the Maroc Loca admin dashboard.</p>
+        <h1 className={`text-2xl font-bold ${textColor}`}>{t('dashboard.title')}</h1>
+        <p className={textMutedColor}>{t('dashboard.welcome')}</p>
       </div>
       
       {isLoading ? (
@@ -104,7 +106,7 @@ const AdminDashboard = () => {
                   <Car size={24} />
                 </div>
                 <div className="ml-4">
-                  <p className={`text-sm font-medium ${textMutedColor}`}>Total Cars</p>
+                  <p className={`text-sm font-medium ${textMutedColor}`}>{t('dashboard.stats.totalCars')}</p>
                   <p className={`text-xl font-semibold ${textColor}`}>{stats.totalCars}</p>
                 </div>
               </div>
@@ -123,7 +125,7 @@ const AdminDashboard = () => {
                   <Calendar size={24} />
                 </div>
                 <div className="ml-4">
-                  <p className={`text-sm font-medium ${textMutedColor}`}>Active Reservations</p>
+                  <p className={`text-sm font-medium ${textMutedColor}`}>{t('dashboard.stats.activeReservations')}</p>
                   <p className={`text-xl font-semibold ${textColor}`}>{stats.activeReservations}</p>
                 </div>
               </div>
@@ -142,7 +144,7 @@ const AdminDashboard = () => {
                   <User size={24} />
                 </div>
                 <div className="ml-4">
-                  <p className={`text-sm font-medium ${textMutedColor}`}>Total Users</p>
+                  <p className={`text-sm font-medium ${textMutedColor}`}>{t('dashboard.stats.totalUsers')}</p>
                   <p className={`text-xl font-semibold ${textColor}`}>{stats.totalUsers}</p>
                 </div>
               </div>
@@ -161,7 +163,7 @@ const AdminDashboard = () => {
                   <CreditCard size={24} />
                 </div>
                 <div className="ml-4">
-                  <p className={`text-sm font-medium ${textMutedColor}`}>Total Revenue</p>
+                  <p className={`text-sm font-medium ${textMutedColor}`}>{t('dashboard.stats.totalRevenue')}</p>
                   <p className={`text-xl font-semibold ${textColor}`}>{stats.revenue.toLocaleString()} MAD</p>
                 </div>
               </div>
@@ -179,7 +181,7 @@ const AdminDashboard = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             {/* Reservations Chart */}
             <div className={`${cardBg} rounded-xl shadow-sm p-4`}>
-              <h2 className={`text-lg font-semibold mb-4 ${textColor}`}>Reservations by Month</h2>
+              <h2 className={`text-lg font-semibold mb-4 ${textColor}`}>{t('dashboard.chart.reservations')}</h2>
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChartIcon
@@ -205,7 +207,7 @@ const AdminDashboard = () => {
             
             {/* Car Categories Chart */}
             <div className={`${cardBg} rounded-xl shadow-sm p-4`}>
-              <h2 className={`text-lg font-semibold mb-4 ${textColor}`}>Reservations by Car Category</h2>
+              <h2 className={`text-lg font-semibold mb-4 ${textColor}`}>{t('dashboard.chart.carCategories')}</h2>
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -241,7 +243,7 @@ const AdminDashboard = () => {
           
           {/* Revenue Trend */}
           <div className={`${cardBg} rounded-xl shadow-sm p-4 mb-6`}>
-            <h2 className={`text-lg font-semibold mb-4 ${textColor}`}>Revenue Trend</h2>
+            <h2 className={`text-lg font-semibold mb-4 ${textColor}`}>{t('dashboard.chart.revenue')}</h2>
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
@@ -270,10 +272,10 @@ const AdminDashboard = () => {
           
           {/* Recent Activity */}
           <div className={`${cardBg} rounded-xl shadow-sm p-4`}>
-            <h2 className={`text-lg font-semibold mb-4 ${textColor}`}>Recent Activity</h2>
+            <h2 className={`text-lg font-semibold mb-4 ${textColor}`}>{t('dashboard.activity.title')}</h2>
             <div className="space-y-4">
               {recentActivity.length > 0 ? (
-                recentActivity.map((activity, index) => (
+                recentActivity.map((activity) => (
                   <div key={activity.id} className={`flex items-center py-2 border-b ${borderColor} last:border-b-0`}>
                     <div className={`w-10 h-10 rounded-full ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} flex items-center justify-center font-semibold ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
                       {activity.user.charAt(0)}
@@ -294,7 +296,7 @@ const AdminDashboard = () => {
                   </div>
                 ))
               ) : (
-                <p className={textMutedColor}>No recent activity to display.</p>
+                <p className={textMutedColor}>{t('dashboard.activity.empty')}</p>
               )}
             </div>
           </div>
