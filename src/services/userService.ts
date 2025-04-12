@@ -54,6 +54,14 @@ export const fetchUsers = async (): Promise<User[]> => {
     reservationsData.forEach((reservation) => {
       const userKey = `${reservation.first_name}-${reservation.last_name}-${reservation.phone}`;
       
+      // Ensure status is one of the allowed values, defaulting to 'pending' if invalid
+      const validStatus = (reservation.status === 'pending' || 
+                          reservation.status === 'confirmed' || 
+                          reservation.status === 'completed' || 
+                          reservation.status === 'cancelled') 
+                          ? reservation.status as 'pending' | 'confirmed' | 'completed' | 'cancelled'
+                          : 'pending';
+      
       const reservationObj: Reservation = {
         id: reservation.id,
         carId: reservation.car_id,
@@ -61,7 +69,7 @@ export const fetchUsers = async (): Promise<User[]> => {
         carImage: reservation.cars?.image || 'https://via.placeholder.com/150',
         startDate: reservation.pickup_date.split('T')[0],
         endDate: reservation.return_date.split('T')[0],
-        status: reservation.status as 'pending' | 'confirmed' | 'completed' | 'cancelled' || 'pending',
+        status: validStatus,
         firstConfirmation: Boolean(reservation.first_confirmation),
         secondConfirmation: Boolean(reservation.second_confirmation)
       };
