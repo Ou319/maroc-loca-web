@@ -13,6 +13,7 @@ import {
   Filter
 } from "lucide-react";
 import { CarType } from "@/components/CarCard";
+import { supabase } from "@/integrations/supabase/client";
 
 // Extended car type for admin
 interface AdminCar extends CarType {
@@ -20,70 +21,6 @@ interface AdminCar extends CarType {
   added: string; // date
   reservations: number;
 }
-
-// Sample data - would come from database
-const SAMPLE_CARS: AdminCar[] = [
-  {
-    id: "1",
-    name: "Dacia Duster",
-    category: "SUV",
-    price: 400,
-    image: "https://images.unsplash.com/photo-1580273916550-e323be2ae537?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    seats: 5,
-    transmission: "manual",
-    fuel: "Diesel",
-    year: 2022,
-    description: "The perfect SUV for Moroccan roads, combining comfort and practicality.",
-    status: 'available',
-    added: '2023-10-15',
-    reservations: 24
-  },
-  {
-    id: "2",
-    name: "Renault Clio",
-    category: "Economy",
-    price: 250,
-    image: "https://images.unsplash.com/photo-1590362891991-f776e747a588?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    seats: 5,
-    transmission: "manual",
-    fuel: "Gasoline",
-    year: 2023,
-    description: "Fuel-efficient and easy to drive, ideal for city exploration.",
-    status: 'available',
-    added: '2023-11-05',
-    reservations: 36
-  },
-  {
-    id: "3",
-    name: "Mercedes C-Class",
-    category: "Luxury",
-    price: 700,
-    image: "https://images.unsplash.com/photo-1617814076229-810246fb238e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    seats: 5,
-    transmission: "automatic",
-    fuel: "Gasoline",
-    year: 2022,
-    description: "Experience luxury and performance during your stay in Morocco.",
-    status: 'reserved',
-    added: '2023-09-20',
-    reservations: 15
-  },
-  {
-    id: "4",
-    name: "Range Rover Evoque",
-    category: "SUV",
-    price: 800,
-    image: "https://images.unsplash.com/photo-1551522355-5d3a5c3221b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    seats: 5,
-    transmission: "automatic",
-    fuel: "Diesel",
-    year: 2023,
-    description: "A premium SUV with exceptional off-road capabilities.",
-    status: 'hidden',
-    added: '2023-08-12',
-    reservations: 8
-  }
-];
 
 const CATEGORIES = ["All", "Economy", "SUV", "Luxury"];
 const STATUS_OPTIONS = ["All", "Available", "Reserved", "Hidden"];
@@ -111,9 +48,71 @@ const AdminCars = () => {
   });
   
   useEffect(() => {
-    setCars(SAMPLE_CARS);
-    setFilteredCars(SAMPLE_CARS);
+    fetchCars();
   }, []);
+  
+  const fetchCars = async () => {
+    try {
+      // Fetch cars from Supabase
+      const { data, error } = await supabase
+        .from('cars')
+        .select('*');
+      
+      if (error) {
+        console.error('Error fetching cars:', error);
+        toast({
+          title: "Error fetching cars",
+          description: error.message,
+          duration: 3000,
+        });
+        return;
+      }
+      
+      if (data) {
+        // Fetch reservation counts for each car
+        const carsWithReservationCount = await Promise.all(
+          data.map(async (car) => {
+            // Get reservations count for this car
+            const { count, error: countError } = await supabase
+              .from('reservations')
+              .select('id', { count: 'exact', head: true })
+              .eq('car_id', car.id);
+            
+            if (countError) {
+              console.error('Error fetching reservation count:', countError);
+            }
+            
+            // Format the car data
+            return {
+              id: car.id,
+              name: car.name,
+              category: car.category,
+              price: car.price,
+              image: car.image,
+              seats: car.seats,
+              transmission: car.transmission as "manual" | "automatic",
+              fuel: car.fuel,
+              year: car.year,
+              description: car.description,
+              status: car.status as 'available' | 'reserved' | 'hidden',
+              added: car.created_at ? new Date(car.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+              reservations: count || 0
+            };
+          })
+        );
+        
+        setCars(carsWithReservationCount);
+        setFilteredCars(carsWithReservationCount);
+      }
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load cars",
+        duration: 3000,
+      });
+    }
+  };
   
   useEffect(() => {
     let filtered = cars;
@@ -139,37 +138,81 @@ const AdminCars = () => {
     setFilteredCars(filtered);
   }, [selectedCategory, selectedStatus, searchTerm, cars]);
   
-  const handleAddCar = () => {
-    const newId = Math.random().toString(36).substring(2, 9);
-    
-    const newCar: AdminCar = {
-      id: newId,
-      ...formData,
-      status: 'available',
-      added: new Date().toISOString().split('T')[0],
-      reservations: 0
-    };
-    
-    setCars(prevCars => [...prevCars, newCar]);
-    
-    toast({
-      title: "Car Added",
-      description: `${formData.name} has been added to your fleet.`,
-      duration: 3000,
-    });
-    
-    setFormData({
-      name: "",
-      category: "Economy",
-      price: 0,
-      image: "",
-      seats: 5,
-      transmission: "manual",
-      fuel: "Gasoline",
-      year: new Date().getFullYear(),
-      description: ""
-    });
-    setShowAddModal(false);
+  const handleAddCar = async () => {
+    try {
+      // Add car to Supabase
+      const { data, error } = await supabase
+        .from('cars')
+        .insert({
+          name: formData.name,
+          category: formData.category,
+          price: formData.price,
+          image: formData.image,
+          seats: formData.seats,
+          transmission: formData.transmission,
+          fuel: formData.fuel,
+          year: formData.year,
+          description: formData.description,
+          status: 'available'
+        })
+        .select();
+      
+      if (error) {
+        console.error('Error adding car:', error);
+        toast({
+          title: "Error adding car",
+          description: error.message,
+          duration: 3000,
+        });
+        return;
+      }
+      
+      if (data && data[0]) {
+        const newCar: AdminCar = {
+          id: data[0].id,
+          name: data[0].name,
+          category: data[0].category,
+          price: data[0].price,
+          image: data[0].image,
+          seats: data[0].seats,
+          transmission: data[0].transmission as "manual" | "automatic",
+          fuel: data[0].fuel,
+          year: data[0].year,
+          description: data[0].description,
+          status: data[0].status as 'available' | 'reserved' | 'hidden',
+          added: data[0].created_at ? new Date(data[0].created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          reservations: 0
+        };
+        
+        setCars(prevCars => [...prevCars, newCar]);
+        
+        toast({
+          title: "Car Added",
+          description: `${formData.name} has been added to your fleet.`,
+          duration: 3000,
+        });
+        
+        setFormData({
+          name: "",
+          category: "Economy",
+          price: 0,
+          image: "",
+          seats: 5,
+          transmission: "manual",
+          fuel: "Gasoline",
+          year: new Date().getFullYear(),
+          description: ""
+        });
+        setShowAddModal(false);
+      }
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add car",
+        duration: 3000,
+      });
+    }
   };
   
   const handleEditCar = (car: AdminCar) => {
@@ -188,36 +231,78 @@ const AdminCars = () => {
     setShowAddModal(true);
   };
   
-  const handleUpdateCar = () => {
+  const handleUpdateCar = async () => {
     if (!selectedCar) return;
     
-    setCars(prevCars => 
-      prevCars.map(car => 
-        car.id === selectedCar.id 
-          ? { ...car, ...formData } 
-          : car
-      )
-    );
-    
-    toast({
-      title: "Car Updated",
-      description: `${formData.name} has been updated.`,
-      duration: 3000,
-    });
-    
-    setFormData({
-      name: "",
-      category: "Economy",
-      price: 0,
-      image: "",
-      seats: 5,
-      transmission: "manual",
-      fuel: "Gasoline",
-      year: new Date().getFullYear(),
-      description: ""
-    });
-    setSelectedCar(null);
-    setShowAddModal(false);
+    try {
+      // Update car in Supabase
+      const { data, error } = await supabase
+        .from('cars')
+        .update({
+          name: formData.name,
+          category: formData.category,
+          price: formData.price,
+          image: formData.image,
+          seats: formData.seats,
+          transmission: formData.transmission,
+          fuel: formData.fuel,
+          year: formData.year,
+          description: formData.description
+        })
+        .eq('id', selectedCar.id)
+        .select();
+      
+      if (error) {
+        console.error('Error updating car:', error);
+        toast({
+          title: "Error updating car",
+          description: error.message,
+          duration: 3000,
+        });
+        return;
+      }
+      
+      if (data && data[0]) {
+        setCars(prevCars => 
+          prevCars.map(car => 
+            car.id === selectedCar.id 
+              ? { 
+                  ...car, 
+                  ...formData,
+                  status: data[0].status as 'available' | 'reserved' | 'hidden'
+                } 
+              : car
+          )
+        );
+        
+        toast({
+          title: "Car Updated",
+          description: `${formData.name} has been updated.`,
+          duration: 3000,
+        });
+        
+        setFormData({
+          name: "",
+          category: "Economy",
+          price: 0,
+          image: "",
+          seats: 5,
+          transmission: "manual",
+          fuel: "Gasoline",
+          year: new Date().getFullYear(),
+          description: ""
+        });
+        setSelectedCar(null);
+        setShowAddModal(false);
+      }
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update car",
+        duration: 3000,
+      });
+    }
   };
   
   const handleDeleteCar = (car: AdminCar) => {
@@ -225,37 +310,87 @@ const AdminCars = () => {
     setShowDeleteModal(true);
   };
   
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!selectedCar) return;
     
-    setCars(prevCars => prevCars.filter(car => car.id !== selectedCar.id));
-    
-    toast({
-      title: "Car Deleted",
-      description: `${selectedCar.name} has been removed from your fleet.`,
-      duration: 3000,
-    });
-    
-    setSelectedCar(null);
-    setShowDeleteModal(false);
+    try {
+      // Delete car from Supabase
+      const { error } = await supabase
+        .from('cars')
+        .delete()
+        .eq('id', selectedCar.id);
+      
+      if (error) {
+        console.error('Error deleting car:', error);
+        toast({
+          title: "Error deleting car",
+          description: error.message,
+          duration: 3000,
+        });
+        return;
+      }
+      
+      setCars(prevCars => prevCars.filter(car => car.id !== selectedCar.id));
+      
+      toast({
+        title: "Car Deleted",
+        description: `${selectedCar.name} has been removed from your fleet.`,
+        duration: 3000,
+      });
+      
+      setSelectedCar(null);
+      setShowDeleteModal(false);
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete car",
+        duration: 3000,
+      });
+    }
   };
   
-  const toggleCarVisibility = (car: AdminCar) => {
+  const toggleCarVisibility = async (car: AdminCar) => {
     const newStatus = car.status === 'hidden' ? 'available' : 'hidden';
     
-    setCars(prevCars => 
-      prevCars.map(c => 
-        c.id === car.id 
-          ? { ...c, status: newStatus } 
-          : c
-      )
-    );
-    
-    toast({
-      title: newStatus === 'hidden' ? "Car Hidden" : "Car Visible",
-      description: `${car.name} is now ${newStatus === 'hidden' ? 'hidden from' : 'visible on'} the website.`,
-      duration: 3000,
-    });
+    try {
+      // Update car status in Supabase
+      const { error } = await supabase
+        .from('cars')
+        .update({ status: newStatus })
+        .eq('id', car.id);
+      
+      if (error) {
+        console.error('Error updating car status:', error);
+        toast({
+          title: "Error updating car",
+          description: error.message,
+          duration: 3000,
+        });
+        return;
+      }
+      
+      setCars(prevCars => 
+        prevCars.map(c => 
+          c.id === car.id 
+            ? { ...c, status: newStatus } 
+            : c
+        )
+      );
+      
+      toast({
+        title: newStatus === 'hidden' ? "Car Hidden" : "Car Visible",
+        description: `${car.name} is now ${newStatus === 'hidden' ? 'hidden from' : 'visible on'} the website.`,
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update car visibility",
+        duration: 3000,
+      });
+    }
   };
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
