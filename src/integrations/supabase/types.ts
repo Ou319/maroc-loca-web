@@ -137,36 +137,42 @@ export type Database = {
           car_id: string
           city: string
           created_at: string | null
+          first_confirmation: boolean | null
           first_name: string
           id: string
           last_name: string
           phone: string
           pickup_date: string
           return_date: string
+          second_confirmation: boolean | null
           status: string
         }
         Insert: {
           car_id: string
           city: string
           created_at?: string | null
+          first_confirmation?: boolean | null
           first_name: string
           id?: string
           last_name: string
           phone: string
           pickup_date: string
           return_date: string
+          second_confirmation?: boolean | null
           status?: string
         }
         Update: {
           car_id?: string
           city?: string
           created_at?: string | null
+          first_confirmation?: boolean | null
           first_name?: string
           id?: string
           last_name?: string
           phone?: string
           pickup_date?: string
           return_date?: string
+          second_confirmation?: boolean | null
           status?: string
         }
         Relationships: [
