@@ -47,7 +47,7 @@ export const fetchDashboardStats = async (): Promise<DashboardStats> => {
     // Get total reservations and active reservations
     const { data: reservationsData, error: reservationsError } = await supabase
       .from('reservations')
-      .select('id, status, pickup_date, return_date');
+      .select('id, status, pickup_date, return_date, first_name, last_name, car_id');
     
     if (reservationsError) throw reservationsError;
     
