@@ -10,117 +10,7 @@ import {
   Calendar,
   Filter
 } from "lucide-react";
-
-// Types for user reservations
-interface Reservation {
-  id: string;
-  carId: string;
-  carName: string;
-  carImage: string;
-  startDate: string;
-  endDate: string;
-  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
-  firstConfirmation: boolean;
-  secondConfirmation: boolean;
-}
-
-interface User {
-  id: string;
-  firstName: string;
-  lastName: string;
-  phone: string;
-  city: string;
-  reservations: Reservation[];
-  createdAt: string;
-}
-
-// Sample data - would come from database
-const SAMPLE_USERS: User[] = [
-  {
-    id: "1",
-    firstName: "John",
-    lastName: "Doe",
-    phone: "+212 6 11 22 33 44",
-    city: "Casablanca",
-    createdAt: "2023-11-20",
-    reservations: [
-      {
-        id: "r1",
-        carId: "1",
-        carName: "Dacia Duster",
-        carImage: "https://images.unsplash.com/photo-1580273916550-e323be2ae537?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-        startDate: "2023-12-01",
-        endDate: "2023-12-05",
-        status: 'confirmed',
-        firstConfirmation: true,
-        secondConfirmation: false
-      }
-    ]
-  },
-  {
-    id: "2",
-    firstName: "Alice",
-    lastName: "Smith",
-    phone: "+212 6 22 33 44 55",
-    city: "Marrakech",
-    createdAt: "2023-10-15",
-    reservations: [
-      {
-        id: "r2",
-        carId: "2",
-        carName: "Renault Clio",
-        carImage: "https://images.unsplash.com/photo-1590362891991-f776e747a588?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-        startDate: "2023-11-28",
-        endDate: "2023-12-02",
-        status: 'completed',
-        firstConfirmation: true,
-        secondConfirmation: true
-      }
-    ]
-  },
-  {
-    id: "3",
-    firstName: "Mohammed",
-    lastName: "Al-Farsi",
-    phone: "+212 6 33 44 55 66",
-    city: "Rabat",
-    createdAt: "2023-11-05",
-    reservations: [
-      {
-        id: "r3",
-        carId: "3",
-        carName: "Mercedes C-Class",
-        carImage: "https://images.unsplash.com/photo-1617814076229-810246fb238e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-        startDate: "2023-12-10",
-        endDate: "2023-12-15",
-        status: 'pending',
-        firstConfirmation: false,
-        secondConfirmation: false
-      }
-    ]
-  },
-  {
-    id: "4",
-    firstName: "Sophie",
-    lastName: "Martin",
-    phone: "+212 6 44 55 66 77",
-    city: "Tangier",
-    createdAt: "2023-09-22",
-    reservations: [
-      {
-        id: "r4",
-        carId: "4",
-        carName: "Range Rover Evoque",
-        carImage: "https://images.unsplash.com/photo-1551522355-5d3a5c3221b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-        startDate: "2023-11-15",
-        endDate: "2023-11-20",
-        status: 'cancelled',
-        firstConfirmation: false,
-        secondConfirmation: false
-      }
-    ]
-  }
-];
+import { fetchUsers, updateReservationStatus, User, Reservation } from "@/services/userService";
 
 const STATUS_OPTIONS = ["All", "Pending", "Confirmed", "Completed", "Cancelled"];
 
@@ -131,13 +21,29 @@ const AdminUsers = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All");
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
-    // Here you would fetch data from your API
-    // For now, use sample data
-    setUsers(SAMPLE_USERS);
-    setFilteredUsers(SAMPLE_USERS);
+    loadUsers();
   }, []);
+  
+  const loadUsers = async () => {
+    setIsLoading(true);
+    try {
+      const usersData = await fetchUsers();
+      setUsers(usersData);
+      setFilteredUsers(usersData);
+    } catch (error) {
+      console.error("Failed to load users:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load user data. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   useEffect(() => {
     let filtered = users;
@@ -168,46 +74,73 @@ const AdminUsers = () => {
     setExpandedUserId(expandedUserId === userId ? null : userId);
   };
   
-  const updateReservationStatus = (userId: string, reservationId: string, update: Partial<Reservation>) => {
-    setUsers(prevUsers => 
-      prevUsers.map(user => 
-        user.id === userId 
-          ? {
-              ...user,
-              reservations: user.reservations.map(res => 
-                res.id === reservationId 
-                  ? { ...res, ...update } 
-                  : res
-              )
-            } 
-          : user
-      )
-    );
+  const handleUpdateReservation = async (userId: string, reservationId: string, updates: any) => {
+    try {
+      const success = await updateReservationStatus(reservationId, updates);
+      
+      if (success) {
+        // Update local state
+        setUsers(prevUsers => 
+          prevUsers.map(user => 
+            user.id === userId 
+              ? {
+                  ...user,
+                  reservations: user.reservations.map(res => 
+                    res.id === reservationId 
+                      ? { ...res, ...transformUpdates(updates) } 
+                      : res
+                  )
+                } 
+              : user
+          )
+        );
+        
+        // Show success message
+        toast({
+          title: "Reservation Updated",
+          description: "The reservation status has been updated.",
+          duration: 3000,
+        });
+      } else {
+        throw new Error("Update failed");
+      }
+    } catch (error) {
+      console.error("Error updating reservation:", error);
+      toast({
+        title: "Update Failed",
+        description: "Could not update the reservation. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  // Transform backend update format to frontend format
+  const transformUpdates = (updates: any): Partial<Reservation> => {
+    const transformed: Partial<Reservation> = {};
     
-    // Show success message
-    toast({
-      title: "Reservation Updated",
-      description: "The reservation status has been updated.",
-      duration: 3000,
-    });
+    if (updates.status) transformed.status = updates.status;
+    if ('first_confirmation' in updates) transformed.firstConfirmation = updates.first_confirmation;
+    if ('second_confirmation' in updates) transformed.secondConfirmation = updates.second_confirmation;
+    
+    return transformed;
   };
   
   const confirmFirstStep = (userId: string, reservationId: string) => {
-    updateReservationStatus(userId, reservationId, { 
-      firstConfirmation: true, 
-      status: 'confirmed'
+    handleUpdateReservation(userId, reservationId, { 
+      status: 'confirmed',
+      first_confirmation: true
     });
   };
   
   const confirmSecondStep = (userId: string, reservationId: string) => {
-    updateReservationStatus(userId, reservationId, { 
-      secondConfirmation: true, 
-      status: 'completed'
+    handleUpdateReservation(userId, reservationId, { 
+      status: 'completed',
+      second_confirmation: true
     });
   };
   
   const cancelReservation = (userId: string, reservationId: string) => {
-    updateReservationStatus(userId, reservationId, { 
+    handleUpdateReservation(userId, reservationId, { 
       status: 'cancelled'
     });
   };
@@ -272,157 +205,164 @@ const AdminUsers = () => {
       
       {/* Users List */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <div className="divide-y divide-gray-200">
-          {filteredUsers.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
-              No users found. Try adjusting your search filters.
-            </div>
-          ) : (
-            filteredUsers.map(user => (
-              <div key={user.id} className="overflow-hidden">
-                {/* User Row */}
-                <div 
-                  className={`p-4 cursor-pointer hover:bg-gray-50 ${
-                    expandedUserId === user.id ? 'bg-gray-50' : ''
-                  }`}
-                  onClick={() => toggleUserExpand(user.id)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 rounded-full bg-morocco-primary text-white flex items-center justify-center font-bold">
-                        {user.firstName.charAt(0)}{user.lastName.charAt(0)}
-                      </div>
-                      <div className="ml-4">
-                        <h3 className="font-medium text-gray-900">{user.firstName} {user.lastName}</h3>
-                        <div className="mt-1 flex items-center text-sm text-gray-500">
-                          <Phone size={14} className="mr-1" />
-                          {user.phone}
-                          <span className="mx-2">•</span>
-                          {user.city}
+        {isLoading ? (
+          <div className="p-8 text-center">
+            <div className="animate-spin w-8 h-8 border-4 border-gray-300 border-t-morocco-primary rounded-full mx-auto mb-4"></div>
+            <p className="text-gray-500">Loading user data...</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-200">
+            {filteredUsers.length === 0 ? (
+              <div className="p-8 text-center text-gray-500">
+                No users found. Try adjusting your search filters.
+              </div>
+            ) : (
+              filteredUsers.map(user => (
+                <div key={user.id} className="overflow-hidden">
+                  {/* User Row */}
+                  <div 
+                    className={`p-4 cursor-pointer hover:bg-gray-50 ${
+                      expandedUserId === user.id ? 'bg-gray-50' : ''
+                    }`}
+                    onClick={() => toggleUserExpand(user.id)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="w-10 h-10 rounded-full bg-morocco-primary text-white flex items-center justify-center font-bold">
+                          {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+                        </div>
+                        <div className="ml-4">
+                          <h3 className="font-medium text-gray-900">{user.firstName} {user.lastName}</h3>
+                          <div className="mt-1 flex items-center text-sm text-gray-500">
+                            <Phone size={14} className="mr-1" />
+                            {user.phone}
+                            <span className="mx-2">•</span>
+                            {user.city}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="flex items-center">
-                      <div className="text-sm text-gray-500 mr-4">
-                        {user.reservations.length} {user.reservations.length === 1 ? 'reservation' : 'reservations'}
+                      <div className="flex items-center">
+                        <div className="text-sm text-gray-500 mr-4">
+                          {user.reservations.length} {user.reservations.length === 1 ? 'reservation' : 'reservations'}
+                        </div>
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          user.reservations.length > 0 
+                            ? getStatusBadgeClass(user.reservations[0].status)
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {user.reservations.length > 0 
+                            ? user.reservations[0].status.charAt(0).toUpperCase() + user.reservations[0].status.slice(1)
+                            : 'No Reservations'}
+                        </span>
                       </div>
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        user.reservations.length > 0 
-                          ? getStatusBadgeClass(user.reservations[0].status)
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {user.reservations.length > 0 
-                          ? user.reservations[0].status.charAt(0).toUpperCase() + user.reservations[0].status.slice(1)
-                          : 'No Reservations'}
-                      </span>
                     </div>
                   </div>
-                </div>
-                
-                {/* Expanded Reservations */}
-                {expandedUserId === user.id && (
-                  <div className="bg-gray-50 p-4 border-t border-gray-200 animate-fade-in">
-                    <h4 className="font-medium text-gray-900 mb-4">Reservations</h4>
-                    
-                    {user.reservations.length === 0 ? (
-                      <p className="text-gray-500 italic">This user has no reservations.</p>
-                    ) : (
-                      <div className="space-y-4">
-                        {user.reservations.map(reservation => (
-                          <div key={reservation.id} className="bg-white rounded-lg shadow-sm p-4">
-                            <div className="flex flex-col md:flex-row md:items-center">
-                              <div className="flex items-center mb-4 md:mb-0 md:mr-6">
-                                <div className="w-16 h-16 flex-shrink-0 mr-4">
-                                  <img 
-                                    src={reservation.carImage} 
-                                    alt={reservation.carName}
-                                    className="w-16 h-16 rounded-md object-cover"
-                                  />
+                  
+                  {/* Expanded Reservations */}
+                  {expandedUserId === user.id && (
+                    <div className="bg-gray-50 p-4 border-t border-gray-200 animate-fade-in">
+                      <h4 className="font-medium text-gray-900 mb-4">Reservations</h4>
+                      
+                      {user.reservations.length === 0 ? (
+                        <p className="text-gray-500 italic">This user has no reservations.</p>
+                      ) : (
+                        <div className="space-y-4">
+                          {user.reservations.map(reservation => (
+                            <div key={reservation.id} className="bg-white rounded-lg shadow-sm p-4">
+                              <div className="flex flex-col md:flex-row md:items-center">
+                                <div className="flex items-center mb-4 md:mb-0 md:mr-6">
+                                  <div className="w-16 h-16 flex-shrink-0 mr-4">
+                                    <img 
+                                      src={reservation.carImage} 
+                                      alt={reservation.carName}
+                                      className="w-16 h-16 rounded-md object-cover"
+                                    />
+                                  </div>
+                                  <div>
+                                    <h5 className="font-medium">{reservation.carName}</h5>
+                                    <p className="text-sm text-gray-500 flex items-center mt-1">
+                                      <Calendar size={14} className="mr-1" />
+                                      {reservation.startDate} to {reservation.endDate}
+                                    </p>
+                                  </div>
                                 </div>
-                                <div>
-                                  <h5 className="font-medium">{reservation.carName}</h5>
-                                  <p className="text-sm text-gray-500 flex items-center mt-1">
-                                    <Calendar size={14} className="mr-1" />
-                                    {reservation.startDate} to {reservation.endDate}
-                                  </p>
+                                
+                                <div className="flex-1 flex flex-col md:flex-row md:items-center md:justify-end space-y-2 md:space-y-0 md:space-x-4">
+                                  <span className={`px-3 py-1 text-xs rounded-full ${getStatusBadgeClass(reservation.status)}`}>
+                                    {reservation.status.charAt(0).toUpperCase() + reservation.status.slice(1)}
+                                  </span>
+                                  
+                                  {reservation.status !== 'cancelled' && (
+                                    <div className="flex space-x-2">
+                                      {!reservation.firstConfirmation && (
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            confirmFirstStep(user.id, reservation.id);
+                                          }}
+                                          className="flex items-center px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
+                                        >
+                                          <Check size={14} className="mr-1" />
+                                          Confirm Call
+                                        </button>
+                                      )}
+                                      
+                                      {reservation.firstConfirmation && !reservation.secondConfirmation && (
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            confirmSecondStep(user.id, reservation.id);
+                                          }}
+                                          className="flex items-center px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600"
+                                        >
+                                          <Check size={14} className="mr-1" />
+                                          Confirm Pickup
+                                        </button>
+                                      )}
+                                      
+                                      {!reservation.secondConfirmation && (
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            cancelReservation(user.id, reservation.id);
+                                          }}
+                                          className="flex items-center px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600"
+                                        >
+                                          <X size={14} className="mr-1" />
+                                          Cancel
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                               
-                              <div className="flex-1 flex flex-col md:flex-row md:items-center md:justify-end space-y-2 md:space-y-0 md:space-x-4">
-                                <span className={`px-3 py-1 text-xs rounded-full ${getStatusBadgeClass(reservation.status)}`}>
-                                  {reservation.status.charAt(0).toUpperCase() + reservation.status.slice(1)}
-                                </span>
-                                
-                                {reservation.status !== 'cancelled' && (
-                                  <div className="flex space-x-2">
-                                    {!reservation.firstConfirmation && (
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          confirmFirstStep(user.id, reservation.id);
-                                        }}
-                                        className="flex items-center px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
-                                      >
-                                        <Check size={14} className="mr-1" />
-                                        Confirm Call
-                                      </button>
-                                    )}
-                                    
-                                    {reservation.firstConfirmation && !reservation.secondConfirmation && (
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          confirmSecondStep(user.id, reservation.id);
-                                        }}
-                                        className="flex items-center px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600"
-                                      >
-                                        <Check size={14} className="mr-1" />
-                                        Confirm Pickup
-                                      </button>
-                                    )}
-                                    
-                                    {!reservation.secondConfirmation && (
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          cancelReservation(user.id, reservation.id);
-                                        }}
-                                        className="flex items-center px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600"
-                                      >
-                                        <X size={14} className="mr-1" />
-                                        Cancel
-                                      </button>
-                                    )}
-                                  </div>
-                                )}
+                              {/* Confirmation Status */}
+                              <div className="mt-4 flex items-center space-x-6">
+                                <div className="flex items-center">
+                                  <div className={`w-4 h-4 rounded-full mr-2 ${
+                                    reservation.firstConfirmation ? 'bg-green-500' : 'bg-gray-300'
+                                  }`}></div>
+                                  <span className="text-sm">Confirmation Call</span>
+                                </div>
+                                <div className="flex items-center">
+                                  <div className={`w-4 h-4 rounded-full mr-2 ${
+                                    reservation.secondConfirmation ? 'bg-green-500' : 'bg-gray-300'
+                                  }`}></div>
+                                  <span className="text-sm">Car Picked Up</span>
+                                </div>
                               </div>
                             </div>
-                            
-                            {/* Confirmation Status */}
-                            <div className="mt-4 flex items-center space-x-6">
-                              <div className="flex items-center">
-                                <div className={`w-4 h-4 rounded-full mr-2 ${
-                                  reservation.firstConfirmation ? 'bg-green-500' : 'bg-gray-300'
-                                }`}></div>
-                                <span className="text-sm">Confirmation Call</span>
-                              </div>
-                              <div className="flex items-center">
-                                <div className={`w-4 h-4 rounded-full mr-2 ${
-                                  reservation.secondConfirmation ? 'bg-green-500' : 'bg-gray-300'
-                                }`}></div>
-                                <span className="text-sm">Car Picked Up</span>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))
-          )}
-        </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        )}
       </div>
     </AdminLayout>
   );
