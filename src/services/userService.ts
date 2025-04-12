@@ -46,6 +46,7 @@ export const fetchUsers = async (): Promise<User[]> => {
       .order('created_at', { ascending: false });
 
     if (reservationsError) throw reservationsError;
+    if (!reservationsData) return [];
 
     // Group reservations by user
     const usersMap = new Map<string, User>();
@@ -60,9 +61,9 @@ export const fetchUsers = async (): Promise<User[]> => {
         carImage: reservation.cars?.image || 'https://via.placeholder.com/150',
         startDate: reservation.pickup_date.split('T')[0],
         endDate: reservation.return_date.split('T')[0],
-        status: reservation.status || 'pending',
-        firstConfirmation: reservation.first_confirmation || false,
-        secondConfirmation: reservation.second_confirmation || false
+        status: reservation.status as 'pending' | 'confirmed' | 'completed' | 'cancelled' || 'pending',
+        firstConfirmation: Boolean(reservation.first_confirmation),
+        secondConfirmation: Boolean(reservation.second_confirmation)
       };
 
       if (usersMap.has(userKey)) {
