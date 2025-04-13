@@ -6,14 +6,22 @@ import { CarType } from "@/components/CarCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import Layout from "@/components/Layout";
-import { Calendar, Car, Fuel, Users, ArrowLeft } from "lucide-react";
+import { Calendar, Car, Fuel, Users, ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import ReservationForm from "@/components/ReservationForm";
+
+interface CarImage {
+  id: string;
+  image_url: string;
+  is_primary: boolean;
+}
 
 const CarDetails = () => {
   const { id } = useParams<{ id: string }>();
   const { t } = useLanguage();
   const { toast } = useToast();
   const [car, setCar] = useState<CarType | null>(null);
+  const [carImages, setCarImages] = useState<CarImage[]>([]);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [showReservation, setShowReservation] = useState(false);
   
@@ -23,27 +31,49 @@ const CarDetails = () => {
       
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
+        // Fetch car details
+        const { data: carData, error: carError } = await supabase
           .from('cars')
           .select('*')
           .eq('id', id)
           .single();
           
-        if (error) throw error;
+        if (carError) throw carError;
         
-        if (data) {
+        // Fetch car images
+        const { data: imageData, error: imageError } = await supabase
+          .from('car_images')
+          .select('*')
+          .eq('car_id', id)
+          .order('is_primary', { ascending: false });
+          
+        if (imageError) throw imageError;
+        
+        if (carData) {
           setCar({
-            id: data.id,
-            name: data.name,
-            category: data.category,
-            price: data.price,
-            image: data.image,
-            seats: data.seats,
-            transmission: data.transmission as "manual" | "automatic",
-            fuel: data.fuel,
-            year: data.year,
-            description: data.description
+            id: carData.id,
+            name: carData.name,
+            category: carData.category,
+            price: carData.price,
+            image: carData.image,
+            seats: carData.seats,
+            transmission: carData.transmission as "manual" | "automatic",
+            fuel: carData.fuel,
+            year: carData.year,
+            description: carData.description
           });
+          
+          // Set car images, or use the default image if no images in the new table
+          if (imageData && imageData.length > 0) {
+            setCarImages(imageData);
+          } else if (carData.image) {
+            // Create a default image entry using the legacy image field
+            setCarImages([{
+              id: 'default',
+              image_url: carData.image,
+              is_primary: true
+            }]);
+          }
         }
       } catch (error) {
         console.error("Error fetching car details:", error);
@@ -62,6 +92,22 @@ const CarDetails = () => {
   
   const toggleReservation = () => {
     setShowReservation(!showReservation);
+  };
+
+  const nextImage = () => {
+    setCurrentImageIndex((prevIndex) => 
+      prevIndex === carImages.length - 1 ? 0 : prevIndex + 1
+    );
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prevIndex) => 
+      prevIndex === 0 ? carImages.length - 1 : prevIndex - 1
+    );
+  };
+
+  const changeImage = (index: number) => {
+    setCurrentImageIndex(index);
   };
 
   if (isLoading) {
@@ -117,13 +163,76 @@ const CarDetails = () => {
           </Link>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-            {/* Car image */}
+            {/* Car image gallery */}
             <div className="rounded-xl overflow-hidden shadow-md">
-              <img 
-                src={car.image} 
-                alt={car.name} 
-                className="w-full h-auto object-cover"
-              />
+              {carImages.length > 0 ? (
+                <div className="relative">
+                  <img 
+                    src={carImages[currentImageIndex].image_url} 
+                    alt={`${car.name} - Image ${currentImageIndex + 1}`} 
+                    className="w-full h-96 object-cover"
+                  />
+                  
+                  {carImages.length > 1 && (
+                    <>
+                      {/* Navigation arrows */}
+                      <button 
+                        onClick={prevImage}
+                        className="absolute left-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-40 hover:bg-opacity-60 text-white p-2 rounded-full"
+                      >
+                        <ChevronLeft size={24} />
+                      </button>
+                      <button 
+                        onClick={nextImage}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-40 hover:bg-opacity-60 text-white p-2 rounded-full"
+                      >
+                        <ChevronRight size={24} />
+                      </button>
+                      
+                      {/* Image indicators */}
+                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
+                        {carImages.map((_, index) => (
+                          <button
+                            key={index}
+                            onClick={() => changeImage(index)}
+                            className={`w-3 h-3 rounded-full ${
+                              index === currentImageIndex 
+                                ? 'bg-white' 
+                                : 'bg-white bg-opacity-50 hover:bg-opacity-75'
+                            }`}
+                            aria-label={`View image ${index + 1}`}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <div className="h-96 bg-gray-200 flex items-center justify-center">
+                  <p className="text-gray-500">No images available</p>
+                </div>
+              )}
+              
+              {/* Thumbnail gallery */}
+              {carImages.length > 1 && (
+                <div className="flex mt-4 space-x-2 overflow-x-auto pb-2">
+                  {carImages.map((image, index) => (
+                    <button
+                      key={image.id}
+                      onClick={() => changeImage(index)}
+                      className={`flex-shrink-0 h-20 w-20 overflow-hidden rounded-md ${
+                        index === currentImageIndex ? 'ring-2 ring-teal-500' : ''
+                      }`}
+                    >
+                      <img 
+                        src={image.image_url} 
+                        alt={`${car.name} thumbnail ${index + 1}`}
+                        className="h-full w-full object-cover" 
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             
             {/* Car details */}

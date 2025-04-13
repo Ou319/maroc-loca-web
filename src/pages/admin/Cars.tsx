@@ -40,6 +40,7 @@ const AdminCars = () => {
     category: "Economy",
     price: 0,
     image: "",
+    additionalImages: [""],
     seats: 5,
     transmission: "manual" as "manual" | "automatic",
     fuel: "Gasoline",
@@ -140,7 +141,7 @@ const AdminCars = () => {
   
   const handleAddCar = async () => {
     try {
-      // Add car to Supabase
+      // First, add the car to get its ID
       const { data, error } = await supabase
         .from('cars')
         .insert({
@@ -167,7 +168,39 @@ const AdminCars = () => {
         return;
       }
       
+      // If we have the car data and at least one image
       if (data && data[0]) {
+        const carId = data[0].id;
+        
+        // Insert all car images
+        const imagesToInsert = [
+          // Add the primary image first
+          { car_id: carId, image_url: formData.image, is_primary: true },
+          // Add additional images
+          ...formData.additionalImages
+            .filter(url => url.trim() !== '') // Filter out empty URLs
+            .map(url => ({ 
+              car_id: carId, 
+              image_url: url, 
+              is_primary: false 
+            }))
+        ];
+        
+        if (imagesToInsert.length > 0) {
+          const { error: imagesError } = await supabase
+            .from('car_images')
+            .insert(imagesToInsert);
+            
+          if (imagesError) {
+            console.error('Error adding car images:', imagesError);
+            toast({
+              title: "Warning",
+              description: "Car was added but there was an issue with saving additional images.",
+              duration: 3000,
+            });
+          }
+        }
+        
         const newCar: AdminCar = {
           id: data[0].id,
           name: data[0].name,
@@ -192,11 +225,13 @@ const AdminCars = () => {
           duration: 3000,
         });
         
+        // Reset form
         setFormData({
           name: "",
           category: "Economy",
           price: 0,
           image: "",
+          additionalImages: [""],
           seats: 5,
           transmission: "manual",
           fuel: "Gasoline",
@@ -215,27 +250,69 @@ const AdminCars = () => {
     }
   };
   
-  const handleEditCar = (car: AdminCar) => {
+  const handleEditCar = async (car: AdminCar) => {
     setSelectedCar(car);
-    setFormData({
-      name: car.name,
-      category: car.category,
-      price: car.price,
-      image: car.image,
-      seats: car.seats,
-      transmission: car.transmission,
-      fuel: car.fuel,
-      year: car.year,
-      description: car.description
-    });
-    setShowAddModal(true);
+    
+    try {
+      // Fetch car images for this car
+      const { data: imageData, error: imageError } = await supabase
+        .from('car_images')
+        .select('*')
+        .eq('car_id', car.id)
+        .order('is_primary', { ascending: false });
+        
+      if (imageError) throw imageError;
+      
+      // Prepare the form data with images
+      const additionalImages = imageData 
+        ? imageData
+            .filter(img => !img.is_primary)
+            .map(img => img.image_url)
+        : [];
+      
+      // If no additional images, add an empty field
+      if (additionalImages.length === 0) {
+        additionalImages.push("");
+      }
+      
+      setFormData({
+        name: car.name,
+        category: car.category,
+        price: car.price,
+        image: car.image,
+        additionalImages,
+        seats: car.seats,
+        transmission: car.transmission,
+        fuel: car.fuel,
+        year: car.year,
+        description: car.description
+      });
+      
+      setShowAddModal(true);
+    } catch (error) {
+      console.error('Error loading car images:', error);
+      // Still show the edit modal, but without additional images
+      setFormData({
+        name: car.name,
+        category: car.category,
+        price: car.price,
+        image: car.image,
+        additionalImages: [""],
+        seats: car.seats,
+        transmission: car.transmission,
+        fuel: car.fuel,
+        year: car.year,
+        description: car.description
+      });
+      setShowAddModal(true);
+    }
   };
   
   const handleUpdateCar = async () => {
     if (!selectedCar) return;
     
     try {
-      // Update car in Supabase
+      // Update the car details
       const { data, error } = await supabase
         .from('cars')
         .update({
@@ -262,13 +339,54 @@ const AdminCars = () => {
         return;
       }
       
+      // Handle car images
       if (data && data[0]) {
+        // Delete existing images
+        const { error: deleteError } = await supabase
+          .from('car_images')
+          .delete()
+          .eq('car_id', selectedCar.id);
+          
+        if (deleteError) {
+          console.error('Error deleting existing car images:', deleteError);
+        }
+        
+        // Insert updated images
+        const imagesToInsert = [
+          // Add the primary image first
+          { car_id: selectedCar.id, image_url: formData.image, is_primary: true },
+          // Add additional images
+          ...formData.additionalImages
+            .filter(url => url.trim() !== '') // Filter out empty URLs
+            .map(url => ({ 
+              car_id: selectedCar.id, 
+              image_url: url, 
+              is_primary: false 
+            }))
+        ];
+        
+        if (imagesToInsert.length > 0) {
+          const { error: imagesError } = await supabase
+            .from('car_images')
+            .insert(imagesToInsert);
+            
+          if (imagesError) {
+            console.error('Error updating car images:', imagesError);
+            toast({
+              title: "Warning",
+              description: "Car details were updated but there was an issue with saving the images.",
+              duration: 3000,
+            });
+          }
+        }
+        
         setCars(prevCars => 
           prevCars.map(car => 
             car.id === selectedCar.id 
               ? { 
                   ...car, 
                   ...formData,
+                  additionalImages: undefined, // Remove from car object
                   status: data[0].status as 'available' | 'reserved' | 'hidden'
                 } 
               : car
@@ -286,6 +404,7 @@ const AdminCars = () => {
           category: "Economy",
           price: 0,
           image: "",
+          additionalImages: [""],
           seats: 5,
           transmission: "manual",
           fuel: "Gasoline",
@@ -303,6 +422,31 @@ const AdminCars = () => {
         duration: 3000,
       });
     }
+  };
+  
+  const addImageField = () => {
+    setFormData(prev => ({
+      ...prev,
+      additionalImages: [...prev.additionalImages, ""]
+    }));
+  };
+  
+  const removeImageField = (indexToRemove: number) => {
+    setFormData(prev => ({
+      ...prev,
+      additionalImages: prev.additionalImages.filter((_, index) => index !== indexToRemove)
+    }));
+  };
+  
+  const handleImageChange = (index: number, value: string) => {
+    setFormData(prev => {
+      const newImages = [...prev.additionalImages];
+      newImages[index] = value;
+      return {
+        ...prev,
+        additionalImages: newImages
+      };
+    });
   };
   
   const handleDeleteCar = (car: AdminCar) => {
@@ -425,6 +569,7 @@ const AdminCars = () => {
               category: "Economy",
               price: 0,
               image: "",
+              additionalImages: [""],
               seats: 5,
               transmission: "manual",
               fuel: "Gasoline",
@@ -711,7 +856,7 @@ const AdminCars = () => {
               
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Image URL
+                  Primary Image URL
                 </label>
                 <input
                   type="text"
@@ -723,7 +868,46 @@ const AdminCars = () => {
                   required
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Enter a URL for the car image. You can use services like Unsplash or your own hosting.
+                  Enter a URL for the primary car image. This will be shown as the main image.
+                </p>
+              </div>
+              
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Additional Images
+                  </label>
+                  <button
+                    type="button"
+                    onClick={addImageField}
+                    className="text-sm text-teal-600 hover:text-teal-800 flex items-center"
+                  >
+                    <Plus size={16} className="mr-1" /> Add Another Image
+                  </button>
+                </div>
+                
+                {formData.additionalImages.map((url, index) => (
+                  <div key={index} className="flex items-center mb-2">
+                    <input
+                      type="text"
+                      value={url}
+                      onChange={(e) => handleImageChange(index, e.target.value)}
+                      className="flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-morocco-primary"
+                      placeholder="https://example.com/additional-image.jpg"
+                    />
+                    {formData.additionalImages.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeImageField(index)}
+                        className="ml-2 p-1 text-red-500 hover:text-red-700 rounded-full hover:bg-red-50"
+                      >
+                        <X size={18} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <p className="text-xs text-gray-500 mt-1">
+                  Add multiple images to show different views of the car.
                 </p>
               </div>
               
