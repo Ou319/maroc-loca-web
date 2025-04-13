@@ -59,7 +59,7 @@ const CarCard = ({ car }: CarCardProps) => {
           
           {isReserved && (
             <div className="absolute top-0 left-0 bg-red-500 text-white px-3 py-1 text-sm font-bold">
-              Reserved
+              {language === 'ar' ? 'محجوز' : language === 'fr' ? 'Réservé' : 'Reserved'}
             </div>
           )}
         </div>
@@ -70,14 +70,18 @@ const CarCard = ({ car }: CarCardProps) => {
           
           <div className="flex flex-wrap gap-3 mb-4">
             <span className="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-1 rounded flex items-center">
-              <Car size={14} className="mr-1" />
+              <Car size={14} className={language === 'ar' ? 'ml-1' : 'mr-1'} />
               {car.category}
             </span>
             <span className="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-1 rounded">
-              {car.seats} seats
+              {car.seats} {language === 'ar' ? 'مقاعد' : language === 'fr' ? 'sièges' : 'seats'}
             </span>
             <span className="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-1 rounded">
-              {car.transmission}
+              {language === 'ar' ? 
+                (car.transmission === 'automatic' ? 'أوتوماتيك' : 'يدوي') : 
+                language === 'fr' ? 
+                (car.transmission === 'automatic' ? 'Automatique' : 'Manuel') : 
+                car.transmission}
             </span>
             <span className="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-1 rounded">
               {car.fuel}
@@ -89,9 +93,9 @@ const CarCard = ({ car }: CarCardProps) => {
             <div className="mb-4 text-sm text-gray-600 animate-fade-in">
               <p>{car.description}</p>
               <div className="mt-2">
-                <p><strong>Year:</strong> {car.year}</p>
-                <p><strong>Category:</strong> {car.category}</p>
-                <p><strong>Fuel:</strong> {car.fuel}</p>
+                <p><strong>{language === 'ar' ? 'السنة:' : language === 'fr' ? 'Année:' : 'Year:'}</strong> {car.year}</p>
+                <p><strong>{language === 'ar' ? 'الفئة:' : language === 'fr' ? 'Catégorie:' : 'Category:'}</strong> {car.category}</p>
+                <p><strong>{language === 'ar' ? 'الوقود:' : language === 'fr' ? 'Carburant:' : 'Fuel:'}</strong> {car.fuel}</p>
               </div>
             </div>
           )}
@@ -107,7 +111,9 @@ const CarCard = ({ car }: CarCardProps) => {
               } text-white py-2 rounded transition-colors flex items-center justify-center`}
               disabled={isReserved}
             >
-              {isReserved ? 'Reserved' : t("cars.card.reserve")}
+              {isReserved ? 
+                (language === 'ar' ? 'محجوز' : language === 'fr' ? 'Réservé' : 'Reserved') : 
+                t("cars.card.reserve")}
             </button>
             <button 
               onClick={toggleDetails}
@@ -120,8 +126,12 @@ const CarCard = ({ car }: CarCardProps) => {
           
           {isReserved && (
             <div className="mt-3 text-red-600 text-sm flex items-center">
-              <AlertTriangle size={16} className="mr-1" />
-              This car is currently reserved
+              <AlertTriangle size={16} className={language === 'ar' ? 'ml-1' : 'mr-1'} />
+              {language === 'ar' 
+                ? 'هذه السيارة محجوزة حاليا' 
+                : language === 'fr' 
+                ? 'Cette voiture est actuellement réservée'
+                : 'This car is currently reserved'}
             </div>
           )}
         </div>

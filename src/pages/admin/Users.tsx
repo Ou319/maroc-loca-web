@@ -8,20 +8,24 @@ import {
   X, 
   Phone,
   Calendar,
-  Filter
+  Filter,
+  Trash2
 } from "lucide-react";
-import { fetchUsers, updateReservationStatus, User, Reservation } from "@/services/userService";
+import { fetchUsers, updateReservationStatus, deleteUser, User, Reservation } from "@/services/userService";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const STATUS_OPTIONS = ["All", "Pending", "Confirmed", "Completed", "Cancelled"];
 
 const AdminUsers = () => {
   const { toast } = useToast();
+  const { language } = useLanguage();
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All");
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
   
   useEffect(() => {
     loadUsers();
@@ -111,6 +115,39 @@ const AdminUsers = () => {
         description: "Could not update the reservation. Please try again.",
         variant: "destructive",
       });
+    }
+  };
+  
+  const handleDeleteUser = async (userId: string) => {
+    if (window.confirm('Are you sure you want to delete this user and all their reservations?')) {
+      setIsDeleting(userId);
+      try {
+        const success = await deleteUser(userId);
+        
+        if (success) {
+          // Remove user from local state
+          setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
+          setFilteredUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
+          
+          // Show success message
+          toast({
+            title: "User Deleted",
+            description: "The user and their reservations have been deleted.",
+            duration: 3000,
+          });
+        } else {
+          throw new Error("Delete failed");
+        }
+      } catch (error) {
+        console.error("Error deleting user:", error);
+        toast({
+          title: "Delete Failed",
+          description: "Could not delete the user. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsDeleting(null);
+      }
     }
   };
   
@@ -221,13 +258,15 @@ const AdminUsers = () => {
                 <div key={user.id} className="overflow-hidden">
                   {/* User Row */}
                   <div 
-                    className={`p-4 cursor-pointer hover:bg-gray-50 ${
+                    className={`p-4 hover:bg-gray-50 ${
                       expandedUserId === user.id ? 'bg-gray-50' : ''
                     }`}
-                    onClick={() => toggleUserExpand(user.id)}
                   >
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center">
+                      <div 
+                        className="flex items-center cursor-pointer" 
+                        onClick={() => toggleUserExpand(user.id)}
+                      >
                         <div className="w-10 h-10 rounded-full bg-morocco-primary text-white flex items-center justify-center font-bold">
                           {user.firstName.charAt(0)}{user.lastName.charAt(0)}
                         </div>
@@ -254,6 +293,23 @@ const AdminUsers = () => {
                             ? user.reservations[0].status.charAt(0).toUpperCase() + user.reservations[0].status.slice(1)
                             : 'No Reservations'}
                         </span>
+                        
+                        {/* Delete User Button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteUser(user.id);
+                          }}
+                          disabled={isDeleting === user.id}
+                          className="ml-3 text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
+                          title="Delete User"
+                        >
+                          {isDeleting === user.id ? (
+                            <div className="w-5 h-5 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+                          ) : (
+                            <Trash2 size={18} />
+                          )}
+                        </button>
                       </div>
                     </div>
                   </div>

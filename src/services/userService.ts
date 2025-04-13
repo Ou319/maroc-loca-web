@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export interface User {
@@ -25,7 +24,6 @@ export interface Reservation {
 
 export const fetchUsers = async (): Promise<User[]> => {
   try {
-    // Fetch reservations data
     const { data: reservationsData, error: reservationsError } = await supabase
       .from('reservations')
       .select(`
@@ -48,13 +46,11 @@ export const fetchUsers = async (): Promise<User[]> => {
     if (reservationsError) throw reservationsError;
     if (!reservationsData) return [];
 
-    // Group reservations by user
     const usersMap = new Map<string, User>();
 
     reservationsData.forEach((reservation) => {
       const userKey = `${reservation.first_name}-${reservation.last_name}-${reservation.phone}`;
       
-      // Ensure status is one of the allowed values, defaulting to 'pending' if invalid
       const validStatus = (reservation.status === 'pending' || 
                           reservation.status === 'confirmed' || 
                           reservation.status === 'completed' || 
@@ -75,13 +71,11 @@ export const fetchUsers = async (): Promise<User[]> => {
       };
 
       if (usersMap.has(userKey)) {
-        // User exists, add this reservation
         const user = usersMap.get(userKey)!;
         user.reservations.push(reservationObj);
       } else {
-        // Create new user
         usersMap.set(userKey, {
-          id: reservation.id, // Using reservation ID as a unique identifier
+          id: reservation.id,
           firstName: reservation.first_name,
           lastName: reservation.last_name,
           phone: reservation.phone,
@@ -115,9 +109,7 @@ export const updateReservationStatus = async (
       
     if (error) throw error;
     
-    // If both confirmations are set to true, update the car status to "reserved"
     if (updates.first_confirmation && updates.second_confirmation) {
-      // First, get the car_id from the reservation
       const { data: reservationData, error: reservationError } = await supabase
         .from('reservations')
         .select('car_id')
@@ -126,7 +118,6 @@ export const updateReservationStatus = async (
         
       if (reservationError) throw reservationError;
       
-      // Update the car status to "reserved"
       if (reservationData?.car_id) {
         const { error: carUpdateError } = await supabase
           .from('cars')
@@ -140,6 +131,42 @@ export const updateReservationStatus = async (
     return true;
   } catch (error) {
     console.error("Error updating reservation:", error);
+    return false;
+  }
+};
+
+export const deleteUser = async (userId: string): Promise<boolean> => {
+  try {
+    const { data: reservationsData, error: fetchError } = await supabase
+      .from('reservations')
+      .select('id, car_id')
+      .eq('id', userId);
+      
+    if (fetchError) throw fetchError;
+    
+    if (reservationsData && reservationsData.length > 0) {
+      for (const reservation of reservationsData) {
+        if (reservation.car_id) {
+          const { error: carUpdateError } = await supabase
+            .from('cars')
+            .update({ status: 'available' })
+            .eq('id', reservation.car_id);
+            
+          if (carUpdateError) console.error("Error updating car status:", carUpdateError);
+        }
+      }
+    }
+    
+    const { error: deleteError } = await supabase
+      .from('reservations')
+      .delete()
+      .eq('id', userId);
+      
+    if (deleteError) throw deleteError;
+    
+    return true;
+  } catch (error) {
+    console.error("Error deleting user:", error);
     return false;
   }
 };

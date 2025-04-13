@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 // Define supported languages
@@ -187,7 +186,7 @@ const translations: Translations = {
   },
   "dashboard.stats.totalUsers": {
     ar: "إجمالي المستخدمين",
-    fr: "Total des utilisateurs",
+    fr: "Total des المستخدمين",
     en: "Total Users"
   },
   "dashboard.stats.totalRevenue": {
@@ -336,6 +335,147 @@ const translations: Translations = {
     fr: "© 2025 Maroc Loca. Tous droits réservés.",
     en: "© 2025 Maroc Loca. All rights reserved."
   },
+  // User Management
+  "users.title": {
+    ar: "إدارة المستخدمين",
+    fr: "Gestion des utilisateurs",
+    en: "User Management"
+  },
+  "users.description": {
+    ar: "إدارة المستخدمين وحجوزاتهم.",
+    fr: "Gérer les utilisateurs et leurs réservations.",
+    en: "Manage users and their reservations."
+  },
+  "users.search": {
+    ar: "البحث عن المستخدمين...",
+    fr: "Rechercher des utilisateurs...",
+    en: "Search users..."
+  },
+  "users.status": {
+    ar: "حالة الحجز:",
+    fr: "Statut de réservation:",
+    en: "Reservation Status:"
+  },
+  "users.noReservations": {
+    ar: "لا توجد حجوزات",
+    fr: "Pas de réservations",
+    en: "No Reservations"
+  },
+  "users.reservation": {
+    ar: "حجز",
+    fr: "réservation",
+    en: "reservation"
+  },
+  "users.reservations": {
+    ar: "حجوزات",
+    fr: "réservations",
+    en: "reservations"
+  },
+  "users.loading": {
+    ar: "جاري تحميل بيانات المستخدم...",
+    fr: "Chargement des données utilisateur...",
+    en: "Loading user data..."
+  },
+  "users.noUsersFound": {
+    ar: "لم يتم العثور على مستخدمين. حاول ضبط فلاتر البحث.",
+    fr: "Aucun utilisateur trouvé. Essayez d'ajuster vos filtres de recherche.",
+    en: "No users found. Try adjusting your search filters."
+  },
+  "users.delete": {
+    ar: "حذف المستخدم",
+    fr: "Supprimer l'utilisateur",
+    en: "Delete User"
+  },
+  "users.deleteConfirm": {
+    ar: "هل أنت متأكد أنك تريد حذف هذا المستخدم وجميع حجوزاته؟",
+    fr: "Êtes-vous sûr de vouloir supprimer cet utilisateur et toutes ses réservations?",
+    en: "Are you sure you want to delete this user and all their reservations?"
+  },
+  "users.deleteSuccess": {
+    ar: "تم حذف المستخدم وحجوزاته.",
+    fr: "L'utilisateur et ses réservations ont été supprimés.",
+    en: "The user and their reservations have been deleted."
+  },
+  "users.deleteFailed": {
+    ar: "فشل حذف المستخدم. يرجى المحاولة مرة أخرى.",
+    fr: "Impossible de supprimer l'utilisateur. Veuillez réessayer.",
+    en: "Could not delete the user. Please try again."
+  },
+  "users.confirmCall": {
+    ar: "تأكيد المكالمة",
+    fr: "Confirmer l'appel",
+    en: "Confirm Call"
+  },
+  "users.confirmPickup": {
+    ar: "تأكيد الاستلام",
+    fr: "Confirmer la prise en charge",
+    en: "Confirm Pickup"
+  },
+  "users.cancel": {
+    ar: "إلغاء",
+    fr: "Annuler",
+    en: "Cancel"
+  },
+  "users.callConfirmed": {
+    ar: "تأكيد المكالمة",
+    fr: "Appel confirmé",
+    en: "Confirmation Call"
+  },
+  "users.carPickedUp": {
+    ar: "تم استلام السيارة",
+    fr: "Voiture prise en charge",
+    en: "Car Picked Up"
+  },
+  "users.reserved": {
+    ar: "محجوز",
+    fr: "Réservé",
+    en: "Reserved"
+  },
+  "car.status.reserved": {
+    ar: "محجوز",
+    fr: "Réservé",
+    en: "Reserved"
+  },
+  "car.status.available": {
+    ar: "متاح",
+    fr: "Disponible",
+    en: "Available"
+  },
+  "car.seats": {
+    ar: "مقاعد",
+    fr: "sièges",
+    en: "seats"
+  },
+  "car.year": {
+    ar: "السنة:",
+    fr: "Année:",
+    en: "Year:"
+  },
+  "car.category": {
+    ar: "الفئة:",
+    fr: "Catégorie:",
+    en: "Category:"
+  },
+  "car.fuel": {
+    ar: "الوقود:",
+    fr: "Carburant:",
+    en: "Fuel:"
+  },
+  "car.transmission.automatic": {
+    ar: "أوتوماتيك",
+    fr: "Automatique",
+    en: "Automatic"
+  },
+  "car.transmission.manual": {
+    ar: "يدوي",
+    fr: "Manuel",
+    en: "Manual"
+  },
+  "car.currentlyReserved": {
+    ar: "هذه السيارة محجوزة حاليا",
+    fr: "Cette voiture est actuellement réservée",
+    en: "This car is currently reserved"
+  }
 };
 
 // Define context type
