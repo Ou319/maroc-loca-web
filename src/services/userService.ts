@@ -114,6 +114,29 @@ export const updateReservationStatus = async (
       .eq('id', reservationId);
       
     if (error) throw error;
+    
+    // If both confirmations are set to true, update the car status to "reserved"
+    if (updates.first_confirmation && updates.second_confirmation) {
+      // First, get the car_id from the reservation
+      const { data: reservationData, error: reservationError } = await supabase
+        .from('reservations')
+        .select('car_id')
+        .eq('id', reservationId)
+        .single();
+        
+      if (reservationError) throw reservationError;
+      
+      // Update the car status to "reserved"
+      if (reservationData?.car_id) {
+        const { error: carUpdateError } = await supabase
+          .from('cars')
+          .update({ status: 'reserved' })
+          .eq('id', reservationData.car_id);
+          
+        if (carUpdateError) throw carUpdateError;
+      }
+    }
+    
     return true;
   } catch (error) {
     console.error("Error updating reservation:", error);

@@ -24,6 +24,7 @@ const CarDetails = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [showReservation, setShowReservation] = useState(false);
+  const [isReserved, setIsReserved] = useState(false);
   
   useEffect(() => {
     async function fetchCarDetails() {
@@ -62,6 +63,8 @@ const CarDetails = () => {
             year: carData.year,
             description: carData.description
           });
+          
+          setIsReserved(carData.status === 'reserved');
           
           // Set car images, or use the default image if no images in the new table
           if (imageData && imageData.length > 0) {
@@ -238,13 +241,18 @@ const CarDetails = () => {
             {/* Car details */}
             <div>
               <div className="flex justify-between items-start mb-2">
-                <h1 className="text-3xl md:text-4xl font-bold text-gray-800">{car.name}</h1>
-                <span className="bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-sm font-medium">{car.category}</span>
+                <h1 className="text-3xl md:text-4xl font-bold text-gray-800">{car?.name}</h1>
+                <div className="flex flex-col items-end gap-2">
+                  <span className="bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-sm font-medium">{car?.category}</span>
+                  {isReserved && (
+                    <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">Reserved</span>
+                  )}
+                </div>
               </div>
               
-              <p className="text-3xl font-bold text-teal-600 mb-6">{car.price} MAD<span className="text-base font-normal text-gray-500">/day</span></p>
+              <p className="text-3xl font-bold text-teal-600 mb-6">{car?.price} MAD<span className="text-base font-normal text-gray-500">/day</span></p>
               
-              <p className="text-gray-600 mb-8 text-lg">{car.description}</p>
+              <p className="text-gray-600 mb-8 text-lg">{car?.description}</p>
               
               {/* Car features */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -253,28 +261,28 @@ const CarDetails = () => {
                     <Calendar size={18} className="mr-2" />
                     <span>Year</span>
                   </div>
-                  <p className="font-bold text-gray-800">{car.year}</p>
+                  <p className="font-bold text-gray-800">{car?.year}</p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <div className="flex items-center text-gray-600 mb-1">
                     <Users size={18} className="mr-2" />
                     <span>Seats</span>
                   </div>
-                  <p className="font-bold text-gray-800">{car.seats}</p>
+                  <p className="font-bold text-gray-800">{car?.seats}</p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <div className="flex items-center text-gray-600 mb-1">
                     <Car size={18} className="mr-2" />
                     <span>Transmission</span>
                   </div>
-                  <p className="font-bold text-gray-800 capitalize">{car.transmission}</p>
+                  <p className="font-bold text-gray-800 capitalize">{car?.transmission}</p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <div className="flex items-center text-gray-600 mb-1">
                     <Fuel size={18} className="mr-2" />
                     <span>Fuel</span>
                   </div>
-                  <p className="font-bold text-gray-800">{car.fuel}</p>
+                  <p className="font-bold text-gray-800">{car?.fuel}</p>
                 </div>
               </div>
               
@@ -282,12 +290,17 @@ const CarDetails = () => {
               <div className="flex flex-col sm:flex-row gap-4">
                 <button
                   onClick={toggleReservation}
-                  className="bg-teal-500 hover:bg-teal-600 text-white px-6 py-3 rounded-md font-medium transition-colors flex-1 text-center"
+                  className={`${
+                    isReserved 
+                      ? 'bg-gray-400 cursor-not-allowed' 
+                      : 'bg-teal-500 hover:bg-teal-600'
+                  } text-white px-6 py-3 rounded-md font-medium transition-colors flex-1 text-center`}
+                  disabled={isReserved}
                 >
-                  Reserve Now
+                  {isReserved ? 'Currently Reserved' : 'Reserve Now'}
                 </button>
                 <a
-                  href={`https://wa.me/+212612345678?text=I'm interested in renting the ${car.name}`}
+                  href={`https://wa.me/+212612345678?text=I'm interested in renting the ${car?.name}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-md font-medium transition-colors flex-1 text-center"
@@ -295,11 +308,17 @@ const CarDetails = () => {
                   Contact via WhatsApp
                 </a>
               </div>
+              
+              {isReserved && (
+                <p className="mt-4 text-red-600 text-sm">
+                  This car is currently reserved. Please check back later or contact us for more information.
+                </p>
+              )}
             </div>
           </div>
           
           {/* Reservation form */}
-          {showReservation && (
+          {showReservation && !isReserved && car && (
             <div className="mt-12 p-6 bg-gray-50 rounded-xl">
               <h3 className="text-2xl font-bold text-gray-800 mb-6">Reserve {car.name}</h3>
               <ReservationForm car={car} onClose={toggleReservation} />

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
@@ -24,7 +23,7 @@ const CarsPage = () => {
         const { data, error } = await supabase
           .from('cars')
           .select('*')
-          .eq('status', 'available');
+          .in('status', ['available']);
           
         if (error) throw error;
         
@@ -62,12 +61,10 @@ const CarsPage = () => {
   useEffect(() => {
     let filtered = cars;
     
-    // Filter by category
     if (selectedCategory !== "All") {
       filtered = filtered.filter(car => car.category === selectedCategory);
     }
     
-    // Filter by search term
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(car => 
@@ -90,7 +87,6 @@ const CarsPage = () => {
 
   return (
     <Layout>
-      {/* Hero Section */}
       <section 
         className="py-16 relative"
         style={{
@@ -109,10 +105,8 @@ const CarsPage = () => {
         </div>
       </section>
       
-      {/* Cars Section */}
       <section className="py-16">
         <div className="container mx-auto px-6">
-          {/* Category Filters */}
           <div className="flex flex-wrap justify-center gap-4 mb-8">
             {CATEGORIES.map(category => (
               <button
@@ -129,7 +123,6 @@ const CarsPage = () => {
             ))}
           </div>
           
-          {/* Search Bar */}
           <div className="bg-white rounded-xl shadow-md p-6 mb-10 max-w-4xl mx-auto">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -145,7 +138,6 @@ const CarsPage = () => {
             </div>
           </div>
           
-          {/* Cars Grid */}
           {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
               {[1, 2, 3, 4, 5, 6].map(i => (

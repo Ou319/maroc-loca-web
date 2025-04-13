@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Car, Info } from "lucide-react";
+import { Car, Info, AlertTriangle } from "lucide-react";
 import ReservationModal from "./ReservationModal";
 
 export interface CarType {
@@ -15,6 +15,7 @@ export interface CarType {
   fuel: string;
   year: number;
   description: string;
+  status?: string;
 }
 
 interface CarCardProps {
@@ -26,8 +27,12 @@ const CarCard = ({ car }: CarCardProps) => {
   const [showModal, setShowModal] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   
+  const isReserved = car.status === 'reserved';
+  
   const openReservationModal = () => {
-    setShowModal(true);
+    if (!isReserved) {
+      setShowModal(true);
+    }
   };
   
   const closeReservationModal = () => {
@@ -46,11 +51,17 @@ const CarCard = ({ car }: CarCardProps) => {
           <img 
             src={car.image} 
             alt={car.name} 
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 ${isReserved ? 'opacity-70' : ''}`}
           />
           <div className="absolute top-0 right-0 bg-morocco-primary text-white px-3 py-1 text-sm font-bold">
             {car.price} MAD/day
           </div>
+          
+          {isReserved && (
+            <div className="absolute top-0 left-0 bg-red-500 text-white px-3 py-1 text-sm font-bold">
+              Reserved
+            </div>
+          )}
         </div>
         
         {/* Car Info */}
@@ -89,9 +100,14 @@ const CarCard = ({ car }: CarCardProps) => {
           <div className="flex gap-2 mt-3">
             <button 
               onClick={openReservationModal}
-              className="flex-1 bg-morocco-primary text-white py-2 rounded hover:bg-opacity-90 transition-colors flex items-center justify-center"
+              className={`flex-1 ${
+                isReserved 
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : 'bg-morocco-primary hover:bg-opacity-90'
+              } text-white py-2 rounded transition-colors flex items-center justify-center`}
+              disabled={isReserved}
             >
-              {t("cars.card.reserve")}
+              {isReserved ? 'Reserved' : t("cars.card.reserve")}
             </button>
             <button 
               onClick={toggleDetails}
@@ -101,15 +117,24 @@ const CarCard = ({ car }: CarCardProps) => {
               {t("cars.card.details")}
             </button>
           </div>
+          
+          {isReserved && (
+            <div className="mt-3 text-red-600 text-sm flex items-center">
+              <AlertTriangle size={16} className="mr-1" />
+              This car is currently reserved
+            </div>
+          )}
         </div>
       </div>
       
       {/* Reservation Modal */}
-      <ReservationModal
-        isOpen={showModal}
-        onClose={closeReservationModal}
-        car={car}
-      />
+      {!isReserved && (
+        <ReservationModal
+          isOpen={showModal}
+          onClose={closeReservationModal}
+          car={car}
+        />
+      )}
     </>
   );
 };
