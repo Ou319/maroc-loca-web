@@ -1,4 +1,3 @@
-
 import { ReactNode, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -15,7 +14,8 @@ import {
   Globe,
   ChevronDown,
   Moon,
-  Sun
+  Sun,
+  Settings
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -60,6 +60,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     { path: "/admin/cars", icon: <Car size={20} />, label: "Cars" },
     { path: "/admin/users", icon: <Users size={20} />, label: "Users" },
     { path: "/admin/contact", icon: <Phone size={20} />, label: "Contact" },
+    { path: "/admin/management", icon: <Settings size={20} />, label: "Admin Management" },
   ];
 
   return (
