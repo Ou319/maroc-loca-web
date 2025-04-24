@@ -21,13 +21,15 @@ const formSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
+type FormValues = z.infer<typeof formSchema>;
+
 interface CreateAdminFormProps {
   onSuccess: () => void;
 }
 
 export const CreateAdminForm = ({ onSuccess }: CreateAdminFormProps) => {
   const { toast } = useToast();
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       username: '',
@@ -35,9 +37,13 @@ export const CreateAdminForm = ({ onSuccess }: CreateAdminFormProps) => {
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: FormValues) => {
     try {
-      const success = await createAdmin(values);
+      const success = await createAdmin({
+        username: values.username,
+        password: values.password,
+      });
+      
       if (success) {
         toast({
           title: "Success",
@@ -71,7 +77,7 @@ export const CreateAdminForm = ({ onSuccess }: CreateAdminFormProps) => {
             <FormItem>
               <FormLabel>Username</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input placeholder="Enter username" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -84,7 +90,7 @@ export const CreateAdminForm = ({ onSuccess }: CreateAdminFormProps) => {
             <FormItem>
               <FormLabel>Password</FormLabel>
               <FormControl>
-                <Input type="password" {...field} />
+                <Input type="password" placeholder="Enter password" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
